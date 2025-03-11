@@ -1,16 +1,27 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
-import AuthForm from '@/components/AuthForm';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { toast } from 'sonner';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Simulate loading assets
@@ -21,9 +32,12 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
   
-  const handleAuthSuccess = () => {
-    toast.success('Welcome to SkinIQ!');
-    // In a real app, we would redirect to the dashboard or set authenticated state
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
   
   const fadeVariants = {
@@ -53,10 +67,36 @@ const Index = () => {
         >
           <Logo size="md" />
           
-          {!showAuth && (
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none">
+                <Avatar className="h-10 w-10 cursor-pointer hover:opacity-90 transition-opacity border-2 border-primary/20">
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-secondary text-secondary-foreground">
+                    {user.user_metadata?.full_name ? 
+                      user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() 
+                      : user.email?.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex items-center" onClick={() => toast.info("Profile page coming soon!")}>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="flex items-center text-destructive focus:text-destructive" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <motion.button
               className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-              onClick={() => setShowAuth(true)}
+              onClick={() => navigate('/auth')}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
@@ -68,121 +108,97 @@ const Index = () => {
         
         {/* Main content */}
         <div className="flex-1 flex flex-col items-center justify-center w-full">
-          {!showAuth ? (
-            <div className="text-center max-w-2xl mx-auto">
-              <motion.div 
-                className="inline-block px-3 py-1 mb-6 text-xs font-medium rounded-full bg-secondary text-primary"
-                custom={0}
-                initial="hidden"
-                animate={isLoaded ? "visible" : "hidden"}
-                variants={fadeVariants}
-              >
-                Your AI-powered skin care companion
-              </motion.div>
-              
-              <motion.h1 
-                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-balance"
-                custom={1}
-                initial="hidden"
-                animate={isLoaded ? "visible" : "hidden"}
-                variants={fadeVariants}
-              >
-                Smart skincare,
-                <br />
-                <span className="text-primary">
-                  personalized for you
-                </span>
-              </motion.h1>
-              
-              <motion.p 
-                className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto text-balance"
-                custom={2}
-                initial="hidden"
-                animate={isLoaded ? "visible" : "hidden"}
-                variants={fadeVariants}
-              >
-                SkinIQ uses advanced AI to analyze your skin, recommend personalized
-                routines, and help you achieve your healthiest skin ever.
-              </motion.p>
-              
-              <motion.div
-                custom={3}
-                initial="hidden"
-                animate={isLoaded ? "visible" : "hidden"}
-                variants={fadeVariants}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
-              >
-                <button
-                  onClick={() => setShowAuth(true)}
-                  className={cn(
-                    "px-6 py-3 rounded-xl font-medium transition-all",
-                    "bg-primary text-primary-foreground hover:bg-primary/90",
-                    "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30",
-                    "transform hover:-translate-y-0.5 active:translate-y-0"
-                  )}
-                >
-                  Get Started
-                </button>
-                
-                <button
-                  onClick={() => {
-                    // Scroll to learn more section
-                    document.getElementById('learn-more')?.scrollIntoView({ 
-                      behavior: 'smooth' 
-                    });
-                  }}
-                  className={cn(
-                    "px-6 py-3 rounded-xl font-medium transition-all",
-                    "bg-secondary text-foreground hover:bg-secondary/80"
-                  )}
-                >
-                  Learn More
-                </button>
-              </motion.div>
-              
-              <motion.div
-                className="mt-16"
-                custom={4}
-                initial="hidden"
-                animate={isLoaded ? "visible" : "hidden"}
-                variants={fadeVariants}
-              >
-                <button
-                  onClick={() => {
-                    document.getElementById('learn-more')?.scrollIntoView({ 
-                      behavior: 'smooth' 
-                    });
-                  }}
-                  className="animate-bounce flex flex-col items-center text-sm text-muted-foreground"
-                >
-                  Scroll to learn more
-                  <ChevronDown className="mt-1 h-5 w-5" />
-                </button>
-              </motion.div>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          <div className="text-center max-w-2xl mx-auto">
+            <motion.div 
+              className="inline-block px-3 py-1 mb-6 text-xs font-medium rounded-full bg-secondary text-primary"
+              custom={0}
+              initial="hidden"
+              animate={isLoaded ? "visible" : "hidden"}
+              variants={fadeVariants}
             >
-              <div className="w-full max-w-md mx-auto">
-                <AuthForm
-                  onSuccess={handleAuthSuccess}
-                  className="bg-card shadow-xl shadow-skin-300/5 backdrop-blur-sm rounded-2xl border-skin-200/50 p-8"
-                />
-              </div>
-              
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => setShowAuth(false)}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  ← Back to Home
-                </button>
-              </div>
+              Your AI-powered skin care companion
             </motion.div>
-          )}
+            
+            <motion.h1 
+              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-balance"
+              custom={1}
+              initial="hidden"
+              animate={isLoaded ? "visible" : "hidden"}
+              variants={fadeVariants}
+            >
+              Smart skincare,
+              <br />
+              <span className="text-primary">
+                personalized for you
+              </span>
+            </motion.h1>
+            
+            <motion.p 
+              className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto text-balance"
+              custom={2}
+              initial="hidden"
+              animate={isLoaded ? "visible" : "hidden"}
+              variants={fadeVariants}
+            >
+              SkinIQ uses advanced AI to analyze your skin, recommend personalized
+              routines, and help you achieve your healthiest skin ever.
+            </motion.p>
+            
+            <motion.div
+              custom={3}
+              initial="hidden"
+              animate={isLoaded ? "visible" : "hidden"}
+              variants={fadeVariants}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <button
+                onClick={() => navigate('/auth')}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-medium transition-all",
+                  "bg-primary text-primary-foreground hover:bg-primary/90",
+                  "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30",
+                  "transform hover:-translate-y-0.5 active:translate-y-0"
+                )}
+              >
+                Get Started
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Scroll to learn more section
+                  document.getElementById('learn-more')?.scrollIntoView({ 
+                    behavior: 'smooth' 
+                  });
+                }}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-medium transition-all",
+                  "bg-secondary text-foreground hover:bg-secondary/80"
+                )}
+              >
+                Learn More
+              </button>
+            </motion.div>
+            
+            <motion.div
+              className="mt-16"
+              custom={4}
+              initial="hidden"
+              animate={isLoaded ? "visible" : "hidden"}
+              variants={fadeVariants}
+            >
+              <button
+                onClick={() => {
+                  document.getElementById('learn-more')?.scrollIntoView({ 
+                    behavior: 'smooth' 
+                  });
+                }}
+                className="animate-bounce flex flex-col items-center text-sm text-muted-foreground"
+              >
+                Scroll to learn more
+                <ChevronDown className="mt-1 h-5 w-5" />
+              </button>
+            </motion.div>
+          </div>
         </div>
       </div>
       
