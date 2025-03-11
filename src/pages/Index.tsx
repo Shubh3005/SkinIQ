@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
@@ -31,6 +34,37 @@ const Index = () => {
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Fetch profile data from Supabase when user is logged in
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast.error('Failed to load profile data');
+        } else {
+          setProfileData(data);
+          console.log('Profile data loaded:', data);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Something went wrong');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProfileData();
+  }, [user]);
   
   const handleSignOut = async () => {
     try {
@@ -51,6 +85,15 @@ const Index = () => {
         ease: [0.33, 1, 0.68, 1]
       }
     })
+  };
+  
+  // Display greeting with profile data if available
+  const renderGreeting = () => {
+    if (user && profileData) {
+      const name = profileData.full_name || user.email?.split('@')[0] || 'there';
+      return `Hello, ${name}! Welcome to SkinIQ.`;
+    }
+    return 'Smart skincare, personalized for you';
   };
   
   return (
@@ -81,6 +124,11 @@ const Index = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                {profileData && profileData.skin_type && (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">
+                    Skin type: {profileData.skin_type}
+                  </div>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="flex items-center" onClick={() => toast.info("Profile page coming soon!")}>
                   <User className="mr-2 h-4 w-4" />
@@ -126,11 +174,23 @@ const Index = () => {
               animate={isLoaded ? "visible" : "hidden"}
               variants={fadeVariants}
             >
-              Smart skincare,
-              <br />
-              <span className="text-primary">
-                personalized for you
-              </span>
+              {user ? (
+                <>
+                  Welcome back,
+                  <br />
+                  <span className="text-primary">
+                    {profileData?.full_name || user.email?.split('@')[0] || 'User'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  Smart skincare,
+                  <br />
+                  <span className="text-primary">
+                    personalized for you
+                  </span>
+                </>
+              )}
             </motion.h1>
             
             <motion.p 
@@ -151,17 +211,31 @@ const Index = () => {
               variants={fadeVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <button
-                onClick={() => navigate('/auth')}
-                className={cn(
-                  "px-6 py-3 rounded-xl font-medium transition-all",
-                  "bg-primary text-primary-foreground hover:bg-primary/90",
-                  "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30",
-                  "transform hover:-translate-y-0.5 active:translate-y-0"
-                )}
-              >
-                Get Started
-              </button>
+              {!user ? (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className={cn(
+                    "px-6 py-3 rounded-xl font-medium transition-all",
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
+                    "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30",
+                    "transform hover:-translate-y-0.5 active:translate-y-0"
+                  )}
+                >
+                  Get Started
+                </button>
+              ) : (
+                <button
+                  onClick={() => toast.info("Skin analysis feature coming soon!")}
+                  className={cn(
+                    "px-6 py-3 rounded-xl font-medium transition-all",
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
+                    "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30",
+                    "transform hover:-translate-y-0.5 active:translate-y-0"
+                  )}
+                >
+                  Analyze My Skin
+                </button>
+              )}
               
               <button
                 onClick={() => {
