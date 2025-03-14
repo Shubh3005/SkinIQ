@@ -176,7 +176,7 @@ const Index = () => {
         </motion.div>
         
         {/* Main content */}
-        <div className="flex-1 flex flex-col items-center justify-center w-full">
+        <div className="flex-1 flex flex-col items-center justify-center w-full" >
           <div className="text-center max-w-2xl mx-auto">
             <motion.div 
               className="inline-block px-3 py-1 mb-6 text-xs font-medium rounded-full bg-secondary text-primary"
@@ -258,7 +258,7 @@ const Index = () => {
                 </button>
               )}
               
-              <button
+              <button style={{paddingLeft: 36}}
                 onClick={() => {
                   // Scroll to learn more section
                   document.getElementById('learn-more')?.scrollIntoView({ 
