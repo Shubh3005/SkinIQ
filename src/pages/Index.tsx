@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { toast } from 'sonner';
-import { ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,36 +111,56 @@ const Index = () => {
           <Logo size="md" />
           
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="focus:outline-none">
-                <Avatar className="h-10 w-10 cursor-pointer hover:opacity-90 transition-opacity border-2 border-primary/20">
-                  <AvatarImage src={user.user_metadata?.avatar_url} />
-                  <AvatarFallback className="bg-secondary text-secondary-foreground">
-                    {user.user_metadata?.full_name ? 
-                      user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() 
-                      : user.email?.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                {profileData && profileData.skin_type && (
-                  <div className="px-2 py-1 text-sm text-muted-foreground">
-                    Skin type: {profileData.skin_type}
-                  </div>
+            <div className="flex items-center gap-4">
+              <motion.button
+                className={cn(
+                  "px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all",
+                  "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center" onClick={() => toast.info("Profile page coming soon!")}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center text-destructive focus:text-destructive" onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                onClick={() => navigate('/skincare-ai')}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.0 }}
+              >
+                <MessageCircle className="h-4 w-4" />
+                SkinCare AI
+              </motion.button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <Avatar className="h-10 w-10 cursor-pointer hover:opacity-90 transition-opacity border-2 border-primary/20">
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback className="bg-secondary text-secondary-foreground">
+                      {user.user_metadata?.full_name ? 
+                        user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() 
+                        : user.email?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  {profileData && profileData.skin_type && (
+                    <div className="px-2 py-1 text-sm text-muted-foreground">
+                      Skin type: {profileData.skin_type}
+                    </div>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex items-center" onClick={() => toast.info("Profile page coming soon!")}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center" onClick={() => navigate('/skincare-ai')}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    SkinCare AI
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex items-center text-destructive focus:text-destructive" onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <motion.button
               className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
@@ -305,6 +325,18 @@ const Index = () => {
                 <p className="text-muted-foreground">{feature.description}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-12">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => navigate('/skincare-ai')}
+              className="group"
+            >
+              <MessageCircle className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+              Try SkinCare AI Assistant
+            </Button>
           </div>
         </div>
       </div>
