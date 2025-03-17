@@ -1,8 +1,17 @@
+
 #root {
-  max-width: 1280px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
   text-align: center;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  #root {
+    max-width: 1280px;
+    padding: 2rem;
+  }
 }
 
 .logo {
@@ -39,4 +48,26 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Mobile optimization */
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+input, button, textarea, select {
+  appearance: none;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+}
+
+@media (max-width: 767px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
 }
