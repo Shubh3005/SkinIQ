@@ -1,0 +1,35 @@
+{
+  "name": "my-ios-app",
+  "version": "1.0.0",
+  "description": "A React Native iOS application for skincare analysis and recommendations.",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "build": "react-native build",
+    "test": "react-native test",
+    "eject": "react-native eject"
+  },
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-native": "^0.64.0",
+    "react-router-dom": "^5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.3",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/my-ios-app.git"
+  },
+  "keywords": [
+    "react",
+    "react-native",
+    "skincare",
+    "ai"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
