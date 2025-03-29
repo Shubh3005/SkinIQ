@@ -196,12 +196,16 @@ const Index = () => {
               
               <button style={{
               paddingLeft: 36
-            }} onClick={() => {
-              document.getElementById('learn-more')?.scrollIntoView({
-                behavior: 'smooth'
-              });
+            }}
+            // Replace
+            //On clic go to SkinCareAi.tsx
+            onClick={() => {
+              navigate('/skincare-ai');
+              // document.getElementById('learn-more')?.scrollIntoView({
+              //   behavior: 'smooth'
+              // });
             }} className={cn("px-6 py-3 rounded-xl font-medium transition-all", "bg-secondary text-foreground hover:bg-secondary/80")}>
-                Learn More
+                SkinCare AI
               </button>
             </motion.div>
             

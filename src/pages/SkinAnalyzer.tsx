@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Droplet, ShieldCheck, Sun, Sparkles, Palette, RefreshCw, Scan } from 'lucide-react';
@@ -158,9 +157,7 @@ const SkinAnalyzer = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mb-8 text-center"
         >
-          <h1 className="text-3xl font-bold">
-            <span className="text-primary">SkinIQ</span> Analyzer
-          </h1>
+          <h1 className="text-3xl font-bold">SkinIQ</h1>
           <p className="text-muted-foreground mt-2">
             Advanced AI-powered skin analysis and recommendation system
           </p>
