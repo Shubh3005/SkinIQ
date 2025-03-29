@@ -5,13 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { toast } from 'sonner';
-import { ChevronDown, LogOut, MessageCircle, User, Scan } from 'lucide-react';
+import { ChevronDown, LogOut, MessageSquare, User, Scan } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import RoutineCalendar from '@/components/RoutineCalendar';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -112,7 +113,7 @@ const Index = () => {
           }} transition={{
             delay: 1.0
           }}>
-                <MessageCircle className="h-4 w-4" />
+                <MessageSquare className="h-4 w-4" />
                 SkinCare AI
               </motion.button>
               
@@ -136,7 +137,7 @@ const Index = () => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem className="flex items-center" onClick={() => navigate('/skincare-ai')}>
-                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <MessageSquare className="mr-2 h-4 w-4" />
                     SkinCare AI
                   </DropdownMenuItem>
                   <DropdownMenuItem className="flex items-center" onClick={() => navigate('/skin-analyzer')}>
@@ -204,22 +205,49 @@ const Index = () => {
                   "transform hover:-translate-y-0.5 active:translate-y-0"
                 )}
               >
-                <MessageCircle className="mr-2 h-4 w-4 inline-block" />
+                <MessageSquare className="mr-2 h-4 w-4 inline-block" />
                 SkinCare AI
               </button>
             </motion.div>
             
             <motion.div className="mt-16" custom={4} initial="hidden" animate={isLoaded ? "visible" : "hidden"} variants={fadeVariants}>
               <button onClick={() => {
-              document.getElementById('learn-more')?.scrollIntoView({
+              document.getElementById('routine-tracker')?.scrollIntoView({
                 behavior: 'smooth'
               });
             }} className="animate-bounce flex flex-col items-center text-sm text-center text-stone-400 my-0 mx-auto">
-                Scroll to learn more
+                Scroll to track your routines
                 <ChevronDown className="mt-1 h-5 w-5" />
               </button>
             </motion.div>
           </div>
+        </div>
+      </div>
+      
+      {/* Routine Tracker Section */}
+      <div id="routine-tracker" className="w-full px-6 py-16 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-screen-xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Track Your Skincare Journey</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Consistency is key to effective skincare. Track your morning and evening routines, 
+              build a streak, and earn achievement badges as you take care of your skin.
+            </p>
+          </div>
+          
+          {user ? (
+            <RoutineCalendar />
+          ) : (
+            <div className="text-center bg-card p-10 rounded-xl shadow-md">
+              <h3 className="text-xl font-semibold mb-4">Sign in to track your routines</h3>
+              <p className="text-muted-foreground mb-6">
+                Create an account to track your skincare routines, earn achievements, and get personalized recommendations.
+              </p>
+              <Button onClick={() => navigate('/auth')} size="lg">
+                Sign In or Register
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       
