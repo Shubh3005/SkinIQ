@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import SkinCareAI from "./pages/SkinCareAI";
 import SkinAnalyzer from "./pages/SkinAnalyzer";
+import Profile from "./pages/Profile";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -68,6 +69,7 @@ const App = () => {
             <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/home" element={<Navigate to="/" replace />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/skincare-ai" element={
                   <ProtectedRoute>
@@ -77,6 +79,11 @@ const App = () => {
                 <Route path="/skin-analyzer" element={
                   <ProtectedRoute>
                     <SkinAnalyzer />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

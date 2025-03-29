@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -20,12 +22,14 @@ const Index = () => {
     signOut
   } = useAuth();
   const navigate = useNavigate();
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 500);
     return () => clearTimeout(timer);
   }, []);
+  
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) return;
@@ -51,6 +55,7 @@ const Index = () => {
     };
     fetchProfileData();
   }, [user]);
+  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -58,12 +63,13 @@ const Index = () => {
       console.error('Error signing out:', error);
     }
   };
+  
   const fadeVariants = {
     hidden: {
       opacity: 0,
       y: 20
     },
-    visible: (i: number) => ({
+    visible: (i) => ({
       opacity: 1,
       y: 0,
       transition: {
@@ -73,6 +79,7 @@ const Index = () => {
       }
     })
   };
+  
   const renderGreeting = () => {
     if (user && profileData) {
       const name = profileData.full_name || user.email?.split('@')[0] || 'there';
@@ -80,6 +87,7 @@ const Index = () => {
     }
     return 'Smart skincare, personalized for you';
   };
+  
   return <div className="min-h-screen w-full flex flex-col items-center">
       <AnimatedBackground />
       
@@ -113,7 +121,7 @@ const Index = () => {
                   <Avatar className="h-10 w-10 cursor-pointer hover:opacity-90 transition-opacity border-2 border-primary/20">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
                     <AvatarFallback className="bg-secondary text-secondary-foreground">
-                      {user.user_metadata?.full_name ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase() : user.email?.substring(0, 2).toUpperCase()}
+                      {user.user_metadata?.full_name ? user.user_metadata.full_name.split(" ").map((n) => n[0]).join("").toUpperCase() : user.email?.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
@@ -123,7 +131,7 @@ const Index = () => {
                       Skin type: {profileData.skin_type}
                     </div>}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center" onClick={() => toast.info("Profile page coming soon!")}>
+                  <DropdownMenuItem className="flex items-center" onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
@@ -187,17 +195,16 @@ const Index = () => {
                   Analyze My Skin
                 </button>}
               
-              <button style={{
-              paddingLeft: 36
-            }}
-            // Replace
-            //On clic go to SkinCareAi.tsx
-            onClick={() => {
-              navigate('/skincare-ai');
-              // document.getElementById('learn-more')?.scrollIntoView({
-              //   behavior: 'smooth'
-              // });
-            }} className="">
+              <button 
+                onClick={() => navigate('/skincare-ai')}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-medium transition-all",
+                  "bg-primary/10 text-primary hover:bg-primary/20",
+                  "shadow-lg shadow-primary/5 hover:shadow-xl hover:shadow-primary/10",
+                  "transform hover:-translate-y-0.5 active:translate-y-0"
+                )}
+              >
+                <MessageCircle className="mr-2 h-4 w-4 inline-block" />
                 SkinCare AI
               </button>
             </motion.div>
@@ -207,7 +214,7 @@ const Index = () => {
               document.getElementById('learn-more')?.scrollIntoView({
                 behavior: 'smooth'
               });
-            }} className="animate-bounce flex flex-col items-center text-sm text-center text-stone-400 my-0 mx-[210px]">
+            }} className="animate-bounce flex flex-col items-center text-sm text-center text-stone-400 my-0 mx-auto">
                 Scroll to learn more
                 <ChevronDown className="mt-1 h-5 w-5" />
               </button>
@@ -254,4 +261,5 @@ const Index = () => {
       </footer>
     </div>;
 };
+
 export default Index;

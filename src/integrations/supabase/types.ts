@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chat_history: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          response: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          response: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          response?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -33,6 +57,80 @@ export type Database = {
           id?: string
           skin_type?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recommended_products: {
+        Row: {
+          chat_id: string | null
+          created_at: string
+          id: string
+          product_description: string | null
+          product_link: string | null
+          product_name: string
+          user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          product_description?: string | null
+          product_link?: string | null
+          product_name: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          product_description?: string | null
+          product_link?: string | null
+          product_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommended_products_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chat_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skin_scan_history: {
+        Row: {
+          created_at: string
+          id: string
+          scan_image: string | null
+          skin_issues: string | null
+          skin_tone: string | null
+          skin_type: string | null
+          sun_damage: string | null
+          unique_feature: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scan_image?: string | null
+          skin_issues?: string | null
+          skin_tone?: string | null
+          skin_type?: string | null
+          sun_damage?: string | null
+          unique_feature?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scan_image?: string | null
+          skin_issues?: string | null
+          skin_tone?: string | null
+          skin_type?: string | null
+          sun_damage?: string | null
+          unique_feature?: string | null
+          user_id?: string
         }
         Relationships: []
       }
