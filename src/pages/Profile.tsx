@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from "@/components/ui/calendar"
@@ -8,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +20,44 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Logo from '@/components/Logo';
-import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle, ChevronDown, ChevronUp, ClipboardList, Copy, CopyCheck, CreditCard, Download, Edit, ExternalLink, File, FileText, Folder, Key, LayoutDashboard, ListChecks, Loader2, Lock, LogOut, Mail, MessageSquare, Plus, PlusCircle, RotateCw, Scan, Settings, Share2, Shield, ShoppingBag, Trash, User, UserPlus, X } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  CalendarDays, 
+  CheckCircle, 
+  ChevronDown, 
+  ChevronUp, 
+  ClipboardList, 
+  Copy, 
+  CopyCheck, 
+  CreditCard, 
+  Download, 
+  Edit, 
+  ExternalLink, 
+  File, 
+  FileText, 
+  Folder, 
+  Key, 
+  LayoutDashboard, 
+  ListChecks, 
+  Loader2, 
+  Lock, 
+  LogOut, 
+  Mail, 
+  MessageSquare, 
+  Plus, 
+  PlusCircle, 
+  RotateCw, 
+  Scan, 
+  Settings, 
+  Share2, 
+  Shield, 
+  ShoppingBag, 
+  Trash, 
+  User, 
+  UserPlus, 
+  X 
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +94,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import ProfileForm from '@/components/ProfileForm';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -71,7 +111,7 @@ const Profile = () => {
       setLoadingHistory(true);
       try {
         const { data: scans, error: scanError } = await supabase
-          .from('skincare_scans')
+          .from('skin_scan_history')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -88,7 +128,7 @@ const Profile = () => {
         }
 
         const { data: chats, error: chatError } = await supabase
-          .from('skincare_chats')
+          .from('chat_history')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -171,7 +211,7 @@ const Profile = () => {
               className="flex items-center gap-2"
               onClick={() => navigate('/skincare-ai')}
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageSquare className="h-4 w-4" />
               SkinCare AI
             </Button>
           </div>
@@ -218,9 +258,7 @@ const Profile = () => {
               </CardContent>
               <CardFooter className="border-t bg-muted/30">
                 <Button
-                  onClick={() => signOut(() => {
-                    navigate('/auth');
-                  })}
+                  onClick={() => signOut()}
                   className="w-full relative overflow-hidden group"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
@@ -268,12 +306,9 @@ const Profile = () => {
                     onSelect={handleDateSelect}
                     className="rounded-md border"
                     classNames={{
-                      day: (day) => {
-                        if (hasEventsForDate(day)) {
-                          return "bg-primary/20 text-primary-foreground font-bold relative";
-                        }
-                        return "";
-                      }
+                      day: (day) => cn(
+                        hasEventsForDate(day) ? "bg-primary/20 text-primary-foreground font-bold relative" : ""
+                      )
                     }}
                   />
                 </div>
@@ -292,11 +327,11 @@ const Profile = () => {
                           {getScansForDate(selectedDate || new Date()).map((scan, index) => (
                             <div key={scan.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
                               <h4 className="font-medium">Scan #{index + 1}</h4>
-                              <p className="text-sm text-muted-foreground">Skin Type: {scan.skinType}</p>
-                              <p className="text-sm text-muted-foreground">Skin Issues: {scan.skinIssues}</p>
-                              <p className="text-sm text-muted-foreground">Sun Damage: {scan.sunDamage}</p>
-                              <p className="text-sm text-muted-foreground">Unique Feature: {scan.uniqueFeature}</p>
-                              <p className="text-sm text-muted-foreground">Skin Tone: {scan.skinTone}</p>
+                              <p className="text-sm text-muted-foreground">Skin Type: {scan.skin_type}</p>
+                              <p className="text-sm text-muted-foreground">Skin Issues: {scan.skin_issues}</p>
+                              <p className="text-sm text-muted-foreground">Sun Damage: {scan.sun_damage}</p>
+                              <p className="text-sm text-muted-foreground">Unique Feature: {scan.unique_feature}</p>
+                              <p className="text-sm text-muted-foreground">Skin Tone: {scan.skin_tone}</p>
                             </div>
                           ))}
                         </div>
