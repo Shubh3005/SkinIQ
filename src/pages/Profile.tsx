@@ -306,8 +306,12 @@ const Profile = () => {
                     onSelect={handleDateSelect}
                     className="rounded-md border"
                     classNames={{
-                      day: (day) => cn(
-                        hasEventsForDate(day) ? "bg-primary/20 text-primary-foreground font-bold relative" : ""
+                      day: cn(
+                        "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                        {
+                          "bg-primary/20 text-primary-foreground font-bold": (day) => 
+                            hasEventsForDate(day)
+                        }
                       )
                     }}
                   />
