@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import SkinCareAI from "./pages/SkinCareAI";
+import SkinAnalyzer from "./pages/SkinAnalyzer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 
@@ -64,6 +65,11 @@ const App = () => {
                 <Route path="/skincare-ai" element={
                   <ProtectedRoute>
                     <SkinCareAI />
+                  </ProtectedRoute>
+                } />
+                <Route path="/skin-analyzer" element={
+                  <ProtectedRoute>
+                    <SkinAnalyzer />
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

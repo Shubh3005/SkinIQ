@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { toast } from 'sonner';
-import { ChevronDown, LogOut, MessageCircle, User } from 'lucide-react';
+import { ChevronDown, LogOut, MessageCircle, User, Scan } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -20,15 +21,14 @@ const Index = () => {
     signOut
   } = useAuth();
   const navigate = useNavigate();
+
   useEffect(() => {
-    // Simulate loading assets
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch profile data from Supabase when user is logged in
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) return;
@@ -54,6 +54,7 @@ const Index = () => {
     };
     fetchProfileData();
   }, [user]);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -61,6 +62,7 @@ const Index = () => {
       console.error('Error signing out:', error);
     }
   };
+
   const fadeVariants = {
     hidden: {
       opacity: 0,
@@ -77,7 +79,6 @@ const Index = () => {
     })
   };
 
-  // Display greeting with profile data if available
   const renderGreeting = () => {
     if (user && profileData) {
       const name = profileData.full_name || user.email?.split('@')[0] || 'there';
@@ -85,11 +86,11 @@ const Index = () => {
     }
     return 'Smart skincare, personalized for you';
   };
+
   return <div className="min-h-screen w-full flex flex-col items-center">
       <AnimatedBackground />
       
       <div className="w-full max-w-screen-xl px-6 py-8 flex-1 flex flex-col">
-        {/* Header */}
         <motion.div className="flex justify-between items-center" initial={{
         opacity: 0,
         y: -10
@@ -137,6 +138,10 @@ const Index = () => {
                     <MessageCircle className="mr-2 h-4 w-4" />
                     SkinCare AI
                   </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center" onClick={() => navigate('/skin-analyzer')}>
+                    <Scan className="mr-2 h-4 w-4" />
+                    Skin Analyzer
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="flex items-center text-destructive focus:text-destructive" onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -155,7 +160,6 @@ const Index = () => {
             </motion.button>}
         </motion.div>
         
-        {/* Main content */}
         <div className="flex-1 flex flex-col items-center justify-center w-full">
           <div className="text-center max-w-2xl mx-auto">
             <motion.div className="inline-block px-3 py-1 mb-6 text-xs font-medium rounded-full bg-secondary text-primary" custom={0} initial="hidden" animate={isLoaded ? "visible" : "hidden"} variants={fadeVariants}>
@@ -186,14 +190,13 @@ const Index = () => {
             <motion.div custom={3} initial="hidden" animate={isLoaded ? "visible" : "hidden"} variants={fadeVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
               {!user ? <button onClick={() => navigate('/auth')} className={cn("px-6 py-3 rounded-xl font-medium transition-all", "bg-primary text-primary-foreground hover:bg-primary/90", "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30", "transform hover:-translate-y-0.5 active:translate-y-0")}>
                   Get Started
-                </button> : <button onClick={() => toast.info("Skin analysis feature coming soon!")} className={cn("px-6 py-3 rounded-xl font-medium transition-all", "bg-primary text-primary-foreground hover:bg-primary/90", "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30", "transform hover:-translate-y-0.5 active:translate-y-0")}>
+                </button> : <button onClick={() => navigate('/skin-analyzer')} className={cn("px-6 py-3 rounded-xl font-medium transition-all", "bg-primary text-primary-foreground hover:bg-primary/90", "shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30", "transform hover:-translate-y-0.5 active:translate-y-0")}>
                   Analyze My Skin
                 </button>}
               
               <button style={{
               paddingLeft: 36
             }} onClick={() => {
-              // Scroll to learn more section
               document.getElementById('learn-more')?.scrollIntoView({
                 behavior: 'smooth'
               });
@@ -216,7 +219,6 @@ const Index = () => {
         </div>
       </div>
       
-      {/* Learn more section */}
       <div id="learn-more" className="w-full bg-card py-20 px-6">
         <div className="max-w-screen-xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-12">How SkinIQ Works</h2>
@@ -242,18 +244,18 @@ const Index = () => {
           </div>
 
           <div className="mt-12">
-            <Button variant="default" size="lg" onClick={() => navigate('/skincare-ai')} className="group">
-              <MessageCircle className="mr-2 h-4 w-4 group-hover:animate-pulse" />
-              Try SkinCare AI Assistant
+            <Button variant="default" size="lg" onClick={() => navigate('/skin-analyzer')} className="group">
+              <Scan className="mr-2 h-4 w-4 group-hover:animate-pulse" />
+              Try Skin Analyzer
             </Button>
           </div>
         </div>
       </div>
       
-      {/* Footer */}
       <footer className="w-full py-8 px-6 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} SkinIQ. All rights reserved.</p>
       </footer>
     </div>;
 };
+
 export default Index;
