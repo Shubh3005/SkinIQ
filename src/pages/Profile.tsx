@@ -1,335 +1,341 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { format, parseISO } from 'date-fns';
-import { Calendar, Shield, MessageCircle, Scan, Link2, ShoppingBag, Clock } from 'lucide-react';
-import { toast } from 'sonner';
+import { Calendar } from "@/components/ui/calendar"
+import { format } from 'date-fns';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Logo from '@/components/Logo';
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle, ChevronDown, ChevronUp, ClipboardList, Copy, CopyCheck, CreditCard, Download, Edit, ExternalLink, File, FileText, Folder, Key, LayoutDashboard, ListChecks, Loader2, Lock, LogOut, Mail, MessageSquare, Plus, PlusCircle, RotateCw, Scan, Settings, Share2, Shield, ShoppingBag, Trash, User, UserPlus, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/use-toast"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [profileData, setProfileData] = useState(null);
-  const [chatHistory, setChatHistory] = useState([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [scanHistory, setScanHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching profile:', error);
-          toast.error('Failed to load profile data');
-        } else if (data) {
-          setProfileData(data);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-    
     const fetchHistory = async () => {
       if (!user) return;
-      
+      setLoadingHistory(true);
       try {
-        setIsLoading(true);
-        
-        // Fetch chat history
-        const { data: chatData, error: chatError } = await supabase.functions.invoke('skincare-history', {
-          body: {
-            action: 'get-history',
-            data: { type: 'chat' }
-          }
-        });
-        
-        if (chatError) throw chatError;
-        if (chatData.success) {
-          setChatHistory(chatData.chats || []);
+        const { data: scans, error: scanError } = await supabase
+          .from('skincare_scans')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (scanError) {
+          console.error("Error fetching scan history:", scanError);
+          toast({
+            title: "Error",
+            description: "Failed to load scan history.",
+            variant: "destructive",
+          });
+        } else {
+          setScanHistory(scans || []);
         }
-        
-        // Fetch scan history
-        const { data: scanData, error: scanError } = await supabase.functions.invoke('skincare-history', {
-          body: {
-            action: 'get-history',
-            data: { type: 'scan' }
-          }
-        });
-        
-        if (scanError) throw scanError;
-        if (scanData.success) {
-          setScanHistory(scanData.scans || []);
+
+        const { data: chats, error: chatError } = await supabase
+          .from('skincare_chats')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (chatError) {
+          console.error("Error fetching chat history:", chatError);
+          toast({
+            title: "Error",
+            description: "Failed to load chat history.",
+            variant: "destructive",
+          });
+        } else {
+          setChatHistory(chats || []);
         }
-        
-        // Generate calendar events from both chat and scan history
-        const allEvents = [
-          ...(chatData.chats || []).map(chat => ({
-            date: parseISO(chat.created_at),
-            type: 'chat',
-            id: chat.id
-          })),
-          ...(scanData.scans || []).map(scan => ({
-            date: parseISO(scan.created_at),
-            type: 'scan',
-            id: scan.id
-          }))
-        ];
-        
-        setCalendarEvents(allEvents);
-        
       } catch (error) {
-        console.error('Error fetching history:', error);
-        toast.error('Failed to load history data');
+        console.error("Unexpected error fetching history:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while loading history.",
+          variant: "destructive",
+        });
       } finally {
-        setIsLoading(false);
+        setLoadingHistory(false);
       }
     };
-    
-    fetchProfileData();
-    fetchHistory();
-  }, [user]);
 
-  const getEventsForDate = (date) => {
-    return calendarEvents.filter(event => 
-      date.getDate() === event.date.getDate() &&
-      date.getMonth() === event.date.getMonth() &&
-      date.getFullYear() === event.date.getFullYear()
-    );
+    fetchHistory();
+  }, [user, toast]);
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
   };
 
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const hasEventsForDate = (date: Date) => {
+    if (!scanHistory) return false;
+    return scanHistory.some(scan => {
+      const scanDate = new Date(scan.created_at);
+      return scanDate.toDateString() === date.toDateString();
+    });
+  };
+
+  const getScansForDate = (date: Date) => {
+    return scanHistory.filter(scan => {
+      const scanDate = new Date(scan.created_at);
+      return scanDate.toDateString() === date.toDateString();
+    });
+  };
+
+  const formatDate = (date: Date | undefined) => {
+    return date ? format(date, 'PPP') : 'No date selected';
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col">
       <AnimatedBackground />
-      
+
       <div className="w-full max-w-screen-xl px-6 py-8 mx-auto flex-1 flex flex-col">
-        <motion.div 
+        <motion.div
           className="flex justify-between items-center mb-8"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <Logo size="md" />
-          
-          <Button variant="ghost" onClick={() => navigate(-1)}>
-            Back
-          </Button>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => navigate('/skin-analyzer')}
+            >
+              <Scan className="h-4 w-4" />
+              Skin Analyzer
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => navigate('/skincare-ai')}
+            >
+              <MessageCircle className="h-4 w-4" />
+              SkinCare AI
+            </Button>
+          </div>
         </motion.div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Profile Info */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Your personal SkinIQ information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center">
-                <Avatar className="h-20 w-20 mb-4">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                    {user?.email ? getInitials(user.email.split('@')[0]) : 'U'}
-                  </AvatarFallback>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8 text-center"
+        >
+          <h1 className="text-3xl font-bold">
+            Your <span className="text-primary">Profile</span>
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage your account and view your skin history
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto w-full">
+          {/* Left column - User Profile */}
+          <div className="flex flex-col">
+            <Card className="w-full h-full flex flex-col border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  User Profile
+                </CardTitle>
+                <CardDescription>
+                  Manage your account settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 p-6 pt-12 flex flex-col items-center justify-center relative">
+                <Avatar className="h-24 w-24 mb-4">
+                  <AvatarImage src={`https://avatars.dicebear.com/api/open-peeps/${user?.email}.svg`} />
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                
-                <h2 className="text-xl font-semibold">
-                  {profileData?.full_name || user?.email?.split('@')[0] || 'User'}
-                </h2>
-                <p className="text-muted-foreground text-sm">{user?.email}</p>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Skin Type</h3>
-                  <p className="font-medium">{profileData?.skin_type || 'Not specified'}</p>
+                <div className="text-center">
+                  <h2 className="text-xl font-semibold">{user?.email}</h2>
+                  <p className="text-muted-foreground text-sm">
+                    {user?.id}
+                  </p>
                 </div>
-                
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Activity</h3>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <MessageCircle className="h-3 w-3" />
-                      {chatHistory.length} Chats
-                    </Badge>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Scan className="h-3 w-3" />
-                      {scanHistory.length} Scans
-                    </Badge>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/30">
+                <Button
+                  onClick={() => signOut(() => {
+                    navigate('/auth');
+                  })}
+                  className="w-full relative overflow-hidden group"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
+                  <LogOut className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  Sign Out
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Right column - Skin History */}
+          <div className="flex flex-col">
+            <Card className="w-full h-full border-2 border-primary/20 shadow-lg shadow-primary/10">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                      Skin History
+                    </CardTitle>
+                    <CardDescription>
+                      View your scan and chat history
+                    </CardDescription>
                   </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                          {formatDate(selectedDate)}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Select a date to view your skin history
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Middle Column - Calendar */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Activity Calendar</CardTitle>
-              <CardDescription>Your SkinIQ usage history</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border"
-                modifiersStyles={{
-                  selected: { backgroundColor: 'hsl(var(--primary))' }
-                }}
-                modifiers={{
-                  hasEvents: (date) => getEventsForDate(date).length > 0,
-                  hasChatEvents: (date) => getEventsForDate(date).some(e => e.type === 'chat'),
-                  hasScanEvents: (date) => getEventsForDate(date).some(e => e.type === 'scan')
-                }}
-                styles={{
-                  hasEvents: { 
-                    textDecoration: 'underline', 
-                    textDecorationColor: 'hsl(var(--primary))',
-                    fontWeight: 'bold'
-                  }
-                }}
-              />
-              
-              <div className="mt-4 space-y-3">
-                <h3 className="text-sm font-medium">
-                  Events on {format(selectedDate, 'MMM dd, yyyy')}
-                </h3>
-                
-                {getEventsForDate(selectedDate).length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No activity on this day</p>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="mb-4">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    className="rounded-md border"
+                    classNames={{
+                      day: (day) => {
+                        if (hasEventsForDate(day)) {
+                          return "bg-primary/20 text-primary-foreground font-bold relative";
+                        }
+                        return "";
+                      }
+                    }}
+                  />
+                </div>
+
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading history...
+                  </div>
                 ) : (
-                  <div className="space-y-2">
-                    {getEventsForDate(selectedDate).map((event, index) => (
-                      <div key={event.id} className="flex items-center gap-2 text-sm">
-                        {event.type === 'chat' ? (
-                          <MessageCircle className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <Scan className="h-4 w-4 text-green-500" />
-                        )}
-                        <span>
-                          {event.type === 'chat' ? 'AI Chat' : 'Skin Analysis'} at {format(event.date, 'h:mm a')}
-                        </span>
+                  <>
+                    {getScansForDate(selectedDate || new Date()).length > 0 ? (
+                      <>
+                        <h3 className="text-xl font-semibold mb-2">Scans for {formatDate(selectedDate)}</h3>
+                        <div className="space-y-4">
+                          {getScansForDate(selectedDate || new Date()).map((scan, index) => (
+                            <div key={scan.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
+                              <h4 className="font-medium">Scan #{index + 1}</h4>
+                              <p className="text-sm text-muted-foreground">Skin Type: {scan.skinType}</p>
+                              <p className="text-sm text-muted-foreground">Skin Issues: {scan.skinIssues}</p>
+                              <p className="text-sm text-muted-foreground">Sun Damage: {scan.sunDamage}</p>
+                              <p className="text-sm text-muted-foreground">Unique Feature: {scan.uniqueFeature}</p>
+                              <p className="text-sm text-muted-foreground">Skin Tone: {scan.skinTone}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        No scans found for this date.
                       </div>
-                    ))}
-                  </div>
+                    )}
+
+                    <Separator className="my-4" />
+
+                    <h3 className="text-xl font-semibold mb-2">Recent Chats</h3>
+                    {chatHistory.length > 0 ? (
+                      <div className="space-y-4">
+                        {chatHistory.slice(0, 3).map((chat, index) => (
+                          <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
+                            <h4 className="font-medium">Chat #{index + 1}</h4>
+                            <p className="text-sm text-muted-foreground">Message: {chat.message}</p>
+                            <p className="text-sm text-muted-foreground">Response: {chat.response}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        No chat history found.
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Right Column - History Tabs */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>History</CardTitle>
-              <CardDescription>Your SkinIQ chats and analyses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="chats">
-                <TabsList className="grid grid-cols-2 mb-4">
-                  <TabsTrigger value="chats" className="flex items-center gap-1">
-                    <MessageCircle className="h-4 w-4" />
-                    Chats
-                  </TabsTrigger>
-                  <TabsTrigger value="scans" className="flex items-center gap-1">
-                    <Scan className="h-4 w-4" />
-                    Scans
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="chats">
-                  <ScrollArea className="h-[300px]">
-                    {isLoading ? (
-                      <div className="flex items-center justify-center h-full">
-                        Loading chat history...
-                      </div>
-                    ) : chatHistory.length === 0 ? (
-                      <div className="text-center text-muted-foreground p-4">
-                        No chat history found
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {chatHistory.map((chat) => (
-                          <div key={chat.id} className="border rounded-lg p-3 hover:bg-accent/50 cursor-pointer" onClick={() => navigate('/skincare-ai')}>
-                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(parseISO(chat.created_at), 'MMM dd, yyyy h:mm a')}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium line-clamp-1">{chat.message}</p>
-                            {chat.recommended_products && chat.recommended_products.length > 0 && (
-                              <Badge variant="outline" className="mt-2 text-xs flex items-center gap-1">
-                                <ShoppingBag className="h-3 w-3" />
-                                {chat.recommended_products.length} product{chat.recommended_products.length > 1 ? 's' : ''}
-                              </Badge>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </TabsContent>
-                
-                <TabsContent value="scans">
-                  <ScrollArea className="h-[300px]">
-                    {isLoading ? (
-                      <div className="flex items-center justify-center h-full">
-                        Loading scan history...
-                      </div>
-                    ) : scanHistory.length === 0 ? (
-                      <div className="text-center text-muted-foreground p-4">
-                        No scan history found
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {scanHistory.map((scan) => (
-                          <div key={scan.id} className="border rounded-lg p-3 hover:bg-accent/50 cursor-pointer" onClick={() => navigate('/skin-analyzer')}>
-                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(parseISO(scan.created_at), 'MMM dd, yyyy h:mm a')}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium">Skin Type: {scan.skin_type || 'Unknown'}</p>
-                            {scan.skin_issues && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{scan.skin_issues}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center text-sm text-muted-foreground flex items-center justify-center gap-8">
+          <div>
+            AI-Powered Skin Analysis
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,25 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Droplet, ShieldCheck, Sun, Sparkles, Palette, RefreshCw, Scan, User, History, X, Zap, Loader2, Sliders, Camera as CameraIcon, Lightbulb, Database } from 'lucide-react';
+import { 
+  Camera, 
+  Droplet, 
+  ShieldCheck, 
+  Sun, 
+  Sparkles, 
+  Palette, 
+  RefreshCw, 
+  Scan, 
+  User, 
+  History, 
+  X, 
+  Zap, 
+  Loader2, 
+  Sliders, 
+  Camera as CameraIcon, 
+  Lightbulb, 
+  Database,
+  MessageCircle 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const SkinAnalyzer = () => {
   const { user } = useAuth();
@@ -27,14 +46,12 @@ const SkinAnalyzer = () => {
   const [overlayContext, setOverlayContext] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
 
-  // Initialize scan animations
   useEffect(() => {
     if (cameraActive && overlayCanvasRef.current) {
       const canvas = overlayCanvasRef.current;
       const ctx = canvas.getContext('2d');
       setOverlayContext(ctx);
       
-      // Initialize canvas size
       if (videoRef.current) {
         const resizeObserver = new ResizeObserver(entries => {
           for (let entry of entries) {
@@ -49,7 +66,6 @@ const SkinAnalyzer = () => {
     }
   }, [cameraActive]);
 
-  // Draw scanning effect
   useEffect(() => {
     if (!overlayContext || !cameraActive) return;
     
@@ -63,15 +79,12 @@ const SkinAnalyzer = () => {
       const canvas = overlayCanvasRef.current;
       const ctx = overlayContext;
       
-      // Clear previous drawing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       if (!analyzing) {
-        // Draw face detection guides when not analyzing
         ctx.strokeStyle = 'rgba(120, 226, 160, 0.5)';
         ctx.lineWidth = 2;
         
-        // Draw oval face guide
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const radiusX = canvas.width * 0.3;
@@ -81,11 +94,9 @@ const SkinAnalyzer = () => {
         ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
         ctx.stroke();
         
-        // Draw corner markers
         const cornerSize = 20;
         const cornerOffset = 40;
         
-        // Top-left corner
         ctx.beginPath();
         ctx.moveTo(cornerOffset, cornerOffset);
         ctx.lineTo(cornerOffset + cornerSize, cornerOffset);
@@ -95,7 +106,6 @@ const SkinAnalyzer = () => {
         ctx.lineTo(cornerOffset, cornerOffset + cornerSize);
         ctx.stroke();
         
-        // Top-right corner
         ctx.beginPath();
         ctx.moveTo(canvas.width - cornerOffset, cornerOffset);
         ctx.lineTo(canvas.width - cornerOffset - cornerSize, cornerOffset);
@@ -105,7 +115,6 @@ const SkinAnalyzer = () => {
         ctx.lineTo(canvas.width - cornerOffset, cornerOffset + cornerSize);
         ctx.stroke();
         
-        // Bottom-left corner
         ctx.beginPath();
         ctx.moveTo(cornerOffset, canvas.height - cornerOffset);
         ctx.lineTo(cornerOffset + cornerSize, canvas.height - cornerOffset);
@@ -115,7 +124,6 @@ const SkinAnalyzer = () => {
         ctx.lineTo(cornerOffset, canvas.height - cornerOffset - cornerSize);
         ctx.stroke();
         
-        // Bottom-right corner
         ctx.beginPath();
         ctx.moveTo(canvas.width - cornerOffset, canvas.height - cornerOffset);
         ctx.lineTo(canvas.width - cornerOffset - cornerSize, canvas.height - cornerOffset);
@@ -125,7 +133,6 @@ const SkinAnalyzer = () => {
         ctx.lineTo(canvas.width - cornerOffset, canvas.height - cornerOffset - cornerSize);
         ctx.stroke();
       } else {
-        // Draw scanning effect when analyzing
         const gradient = ctx.createLinearGradient(0, scanLine - 10, 0, scanLine + 10);
         gradient.addColorStop(0, 'rgba(120, 226, 160, 0)');
         gradient.addColorStop(0.5, 'rgba(120, 226, 160, 0.8)');
@@ -134,16 +141,13 @@ const SkinAnalyzer = () => {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, scanLine - 10, canvas.width, 20);
         
-        // Add some data points and grid effect
         ctx.fillStyle = 'rgba(120, 226, 160, 0.5)';
         
-        // Grid effect
         ctx.strokeStyle = 'rgba(120, 226, 160, 0.2)';
         ctx.lineWidth = 1;
         
         const gridSpacing = 40;
         
-        // Horizontal lines
         for (let y = 0; y < canvas.height; y += gridSpacing) {
           ctx.beginPath();
           ctx.moveTo(0, y);
@@ -151,7 +155,6 @@ const SkinAnalyzer = () => {
           ctx.stroke();
         }
         
-        // Vertical lines
         for (let x = 0; x < canvas.width; x += gridSpacing) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
@@ -159,19 +162,16 @@ const SkinAnalyzer = () => {
           ctx.stroke();
         }
         
-        // Data points that appear to be detected
         for (let i = 0; i < 30; i++) {
           const x = Math.random() * canvas.width;
           const y = Math.random() * canvas.height;
           
-          // Only draw points near the scan line
           if (Math.abs(y - scanLine) < 50) {
             const size = Math.random() * 4 + 1;
             ctx.beginPath();
             ctx.arc(x, y, size, 0, 2 * Math.PI);
             ctx.fill();
             
-            // Draw data lines
             if (Math.random() > 0.7) {
               ctx.beginPath();
               ctx.moveTo(x, y);
@@ -181,7 +181,6 @@ const SkinAnalyzer = () => {
           }
         }
         
-        // Move scan line
         scanLine += scanSpeed;
         if (scanLine > canvas.height) {
           scanLine = 0;
@@ -198,7 +197,6 @@ const SkinAnalyzer = () => {
     };
   }, [overlayContext, cameraActive, analyzing]);
 
-  // Start webcam
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -221,7 +219,6 @@ const SkinAnalyzer = () => {
     }
   };
 
-  // Stop webcam
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject;
@@ -235,14 +232,12 @@ const SkinAnalyzer = () => {
     }
   };
 
-  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, []);
 
-  // Simulate analysis stages
   const simulateAnalysis = async () => {
     const stages = [
       { stage: 'Initializing scan', duration: 800 },
@@ -284,7 +279,6 @@ const SkinAnalyzer = () => {
     }
   };
 
-  // Capture and analyze
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
@@ -292,7 +286,6 @@ const SkinAnalyzer = () => {
       setAnalyzing(true);
       setAnalysisProgress(0);
       
-      // Draw video frame to canvas
       const canvas = canvasRef.current;
       const video = videoRef.current;
       const ctx = canvas.getContext('2d');
@@ -303,13 +296,10 @@ const SkinAnalyzer = () => {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Convert to base64
       const imageData = canvas.toDataURL('image/jpeg', 0.8);
       
-      // Simulate analysis process with stages
       await simulateAnalysis();
       
-      // Generate advanced simulated results
       const skinTypes = ['normal', 'dry', 'oily', 'combination', 'sensitive'];
       const randomizedSkinType = skinTypes[Math.floor(Math.random() * skinTypes.length)];
       
@@ -350,7 +340,6 @@ const SkinAnalyzer = () => {
         skinTone: randomizedSkinTone
       };
       
-      // Save results to database
       if (user) {
         try {
           await supabase.functions.invoke('skincare-history', {
@@ -433,7 +422,6 @@ const SkinAnalyzer = () => {
         </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto w-full">
-          {/* Left column - Camera and controls */}
           <div className="flex flex-col">
             <Card className="w-full h-full flex flex-col border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
               <CardContent className="flex-1 p-6 pt-12 flex flex-col items-center justify-center relative">
@@ -620,7 +608,6 @@ const SkinAnalyzer = () => {
             </Card>
           </div>
           
-          {/* Right column - Analysis results */}
           <div className="flex flex-col">
             <Card className="w-full h-full border-2 border-primary/20 shadow-lg shadow-primary/10">
               <CardContent className="p-6">
@@ -650,7 +637,6 @@ const SkinAnalyzer = () => {
                   </span>
                 </p>
                 
-                {/* Results cards */}
                 <div className="space-y-4">
                   <AnimatePresence>
                     {analysisResults ? (
@@ -796,7 +782,6 @@ const SkinAnalyzer = () => {
   );
 };
 
-// Result card component
 const ResultCard = ({ icon, title, value, delay = 0 }) => {
   return (
     <motion.div 
@@ -814,7 +799,6 @@ const ResultCard = ({ icon, title, value, delay = 0 }) => {
   );
 };
 
-// Empty result card for before analysis
 const EmptyResultCard = ({ icon, title, delay = 0 }) => {
   return (
     <motion.div 

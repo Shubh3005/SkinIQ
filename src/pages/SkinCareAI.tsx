@@ -1,7 +1,18 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, RefreshCw, Send, Sparkles, User, History, Lightbulb, Link2, ShoppingBag } from 'lucide-react';
+import { 
+  MessageCircle, 
+  RefreshCw, 
+  Send, 
+  Sparkles, 
+  User, 
+  History, 
+  Lightbulb, 
+  Link2, 
+  ShoppingBag,
+  Scan 
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
