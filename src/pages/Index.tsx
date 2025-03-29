@@ -11,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -21,14 +20,12 @@ const Index = () => {
     signOut
   } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 500);
     return () => clearTimeout(timer);
   }, []);
-
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) return;
@@ -54,7 +51,6 @@ const Index = () => {
     };
     fetchProfileData();
   }, [user]);
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -62,7 +58,6 @@ const Index = () => {
       console.error('Error signing out:', error);
     }
   };
-
   const fadeVariants = {
     hidden: {
       opacity: 0,
@@ -78,7 +73,6 @@ const Index = () => {
       }
     })
   };
-
   const renderGreeting = () => {
     if (user && profileData) {
       const name = profileData.full_name || user.email?.split('@')[0] || 'there';
@@ -86,7 +80,6 @@ const Index = () => {
     }
     return 'Smart skincare, personalized for you';
   };
-
   return <div className="min-h-screen w-full flex flex-col items-center">
       <AnimatedBackground />
       
@@ -204,7 +197,7 @@ const Index = () => {
               // document.getElementById('learn-more')?.scrollIntoView({
               //   behavior: 'smooth'
               // });
-            }} className={cn("px-6 py-3 rounded-xl font-medium transition-all", "bg-secondary text-foreground hover:bg-secondary/80")}>
+            }} className="">
                 SkinCare AI
               </button>
             </motion.div>
@@ -261,5 +254,4 @@ const Index = () => {
       </footer>
     </div>;
 };
-
 export default Index;
