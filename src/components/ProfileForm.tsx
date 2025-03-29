@@ -29,16 +29,31 @@ const ProfileForm = () => {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle(); // Using maybeSingle instead of single to handle cases where profile might not exist
         
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
+          // Only show error if it's not the "no rows returned" error
           console.error('Error fetching profile:', error);
+          toast.error('Failed to load profile data');
         } else if (data) {
           setValue('full_name', data.full_name || '');
           setValue('skin_type', data.skin_type || '');
+        } else {
+          // If no profile was found, we'll create one
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id }]);
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Failed to create profile');
+          } else {
+            toast.success('Profile created');
+          }
         }
       } catch (error) {
         console.error('Error:', error);
+        toast.error('Something went wrong');
       } finally {
         setIsLoading(false);
       }

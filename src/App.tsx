@@ -28,7 +28,14 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1, // Reduce retry attempts for failed queries
+      staleTime: 60000, // 1 minute
+    },
+  },
+});
 
 const App = () => {
   // Handle touch events better on mobile
