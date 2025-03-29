@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_history: {
         Row: {
           created_at: string
@@ -97,6 +124,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      routine_logs: {
+        Row: {
+          created_at: string
+          date: string
+          evening_completed: boolean
+          id: string
+          morning_completed: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          evening_completed?: boolean
+          id?: string
+          morning_completed?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          evening_completed?: boolean
+          id?: string
+          morning_completed?: boolean
+          user_id?: string
+        }
+        Relationships: []
       }
       skin_scan_history: {
         Row: {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -224,7 +223,6 @@ const Index = () => {
         </div>
       </div>
       
-      {/* Routine Tracker Section */}
       <div id="routine-tracker" className="w-full px-6 py-16 bg-background/80 backdrop-blur-sm">
         <div className="max-w-screen-xl mx-auto">
           <div className="text-center mb-10">
