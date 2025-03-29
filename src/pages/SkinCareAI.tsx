@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, RefreshCw, Send, Sparkles } from 'lucide-react';
@@ -44,7 +43,6 @@ const SkinCareAI = () => {
   const [routineResponse, setRoutineResponse] = useState('');
   const [routineLoading, setRoutineLoading] = useState(false);
 
-  // Toggle skin concern selection
   const toggleConcern = (concern: string) => {
     if (concerns.includes(concern)) {
       setConcerns(concerns.filter(c => c !== concern));
@@ -53,7 +51,6 @@ const SkinCareAI = () => {
     }
   };
 
-  // Handle chat submission
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
@@ -68,7 +65,7 @@ const SkinCareAI = () => {
       });
       
       if (error) throw error;
-      setChatResponse(data.result);
+      setChatResponse(cleanMarkdown(data.result));
     } catch (error: any) {
       console.error('Error calling AI:', error);
       toast.error('Failed to get response. Please try again.');
@@ -77,7 +74,6 @@ const SkinCareAI = () => {
     }
   };
 
-  // Handle routine generation
   const handleGenerateRoutine = async () => {
     setRoutineLoading(true);
     try {
@@ -91,7 +87,7 @@ const SkinCareAI = () => {
       });
       
       if (error) throw error;
-      setRoutineResponse(data.result);
+      setRoutineResponse(cleanMarkdown(data.result));
     } catch (error: any) {
       console.error('Error generating routine:', error);
       toast.error('Failed to generate routine. Please try again.');
@@ -100,12 +96,24 @@ const SkinCareAI = () => {
     }
   };
 
+  const cleanMarkdown = (text: string) => {
+    if (!text) return '';
+    
+    let cleaned = text.replace(/#+\s/g, '');
+    cleaned = cleaned.replace(/\*\*/g, '');
+    cleaned = cleaned.replace(/\*/g, '');
+    cleaned = cleaned.replace(/\_\_/g, '');
+    cleaned = cleaned.replace(/\_/g, '');
+    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    
+    return cleaned;
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center">
       <AnimatedBackground />
       
       <div className="w-full max-w-screen-xl px-6 py-8 flex-1 flex flex-col">
-        {/* Header */}
         <motion.div 
           className="flex justify-between items-center mb-8"
           initial={{ opacity: 0, y: -10 }}
@@ -141,7 +149,6 @@ const SkinCareAI = () => {
             </TabsTrigger>
           </TabsList>
           
-          {/* Chat Tab */}
           <TabsContent value="chat">
             <Card>
               <CardHeader>
@@ -188,7 +195,6 @@ const SkinCareAI = () => {
             </Card>
           </TabsContent>
           
-          {/* Routine Generator Tab */}
           <TabsContent value="routine">
             <Card>
               <CardHeader>
@@ -198,7 +204,6 @@ const SkinCareAI = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Skin Type */}
                 <div className="space-y-2">
                   <Label htmlFor="skin-type">Skin Type</Label>
                   <Select value={skinType} onValueChange={setSkinType}>
@@ -215,7 +220,6 @@ const SkinCareAI = () => {
                   </Select>
                 </div>
                 
-                {/* Skin Concerns */}
                 <div className="space-y-2">
                   <Label>Skin Concerns (select all that apply)</Label>
                   <div className="grid grid-cols-2 gap-2">
@@ -237,7 +241,6 @@ const SkinCareAI = () => {
                   </div>
                 </div>
                 
-                {/* Include Actives */}
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="include-actives" 
@@ -252,7 +255,6 @@ const SkinCareAI = () => {
                   </label>
                 </div>
                 
-                {/* Generated Routine */}
                 {routineResponse && (
                   <div className="bg-muted p-4 rounded-lg mt-4 whitespace-pre-wrap">
                     {routineResponse}
