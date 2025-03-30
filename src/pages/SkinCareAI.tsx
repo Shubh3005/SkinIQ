@@ -59,7 +59,7 @@ const SkinCareAI = () => {
           .from('profiles')
           .select('skin_type, skin_tone')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Error fetching skin profile:', error);

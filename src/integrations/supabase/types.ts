@@ -70,6 +70,7 @@ export type Database = {
           morning_reminder: string | null
           physician_name: string | null
           physician_phone: string | null
+          skin_tone: string | null
           skin_type: string | null
           updated_at: string | null
         }
@@ -82,6 +83,7 @@ export type Database = {
           morning_reminder?: string | null
           physician_name?: string | null
           physician_phone?: string | null
+          skin_tone?: string | null
           skin_type?: string | null
           updated_at?: string | null
         }
@@ -94,6 +96,7 @@ export type Database = {
           morning_reminder?: string | null
           physician_name?: string | null
           physician_phone?: string | null
+          skin_tone?: string | null
           skin_type?: string | null
           updated_at?: string | null
         }

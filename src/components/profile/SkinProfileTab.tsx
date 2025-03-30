@@ -54,12 +54,13 @@ export const SkinProfileTab = () => {
           .from('profiles')
           .select('skin_type, skin_tone')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Error fetching skin profile:', error);
           toast.error('Failed to load skin profile data');
         } else if (data) {
+          // Safely access properties with optional chaining
           form.setValue('skin_type', data.skin_type || '');
           form.setValue('skin_tone', data.skin_tone || '');
         }

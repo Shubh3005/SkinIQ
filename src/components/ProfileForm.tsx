@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from './ui/button';
@@ -27,7 +26,7 @@ const ProfileForm = () => {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('full_name, skin_type')
           .eq('id', user.id)
           .maybeSingle(); // Using maybeSingle instead of single to handle cases where profile might not exist
         
