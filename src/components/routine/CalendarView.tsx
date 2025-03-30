@@ -3,6 +3,7 @@ import React from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import RoutineLegend from './RoutineLegend';
+import { DayComponentProps } from 'react-day-picker';
 
 interface CalendarViewProps {
   selectedDate: Date | undefined;
@@ -26,7 +27,7 @@ const CalendarView = ({ selectedDate, setSelectedDate, getDateStatus }: Calendar
         }}
         defaultMonth={selectedDate}
         components={{
-          Day: ({ date, ...props }) => {
+          Day: ({ date, ...props }: DayComponentProps) => {
             const status = getDateStatus(date);
             return (
               <button
