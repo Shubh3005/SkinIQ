@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,7 +19,9 @@ import {
   Camera as CameraIcon, 
   Lightbulb, 
   Database,
-  MessageCircle 
+  MessageCircle,
+  AlertTriangle,
+  BarChart
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -192,17 +195,29 @@ const SkinAnalyzer = () => {
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setAnalysisResults(result);
+      // Ensure the result has all the required fields
+      const enhancedResult = {
+        ...result,
+        skinType: result.skinType || 'Normal',
+        skinTone: result.skinTone || 'Medium',
+        skinIssues: result.skinIssues || 'None detected',
+        sunDamage: result.sunDamage || 'Minimal',
+        uniqueFeature: result.uniqueFeature || 'None detected',
+        disease: result.disease || 'No disease detected',
+        acneSeverity: result.acneSeverity || 'None'
+      };
+
+      setAnalysisResults(enhancedResult);
       setScanComplete(true);
       toast.success("Analysis complete");
 
-      if (user && result) {
+      if (user && enhancedResult) {
         try {
           await supabase.functions.invoke('skincare-history', {
             body: {
               action: 'save-scan',
               data: {
-                ...result,
+                ...enhancedResult,
                 scanImage: canvas.toDataURL('image/jpeg', 0.8)
               }
             }
@@ -242,9 +257,43 @@ const SkinAnalyzer = () => {
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setAnalysisResults(result);
+      // Ensure the result has all the required fields
+      const enhancedResult = {
+        ...result,
+        skinType: result.skinType || 'Normal',
+        skinTone: result.skinTone || 'Medium',
+        skinIssues: result.skinIssues || 'None detected',
+        sunDamage: result.sunDamage || 'Minimal',
+        uniqueFeature: result.uniqueFeature || 'None detected',
+        disease: result.disease || 'No disease detected',
+        acneSeverity: result.acneSeverity || 'None'
+      };
+      
+      setAnalysisResults(enhancedResult);
       setScanComplete(true);
       toast.success("Analysis complete");
+
+      if (user && enhancedResult) {
+        try {
+          // Convert the file to a Data URL to save in history
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64data = reader.result as string;
+            await supabase.functions.invoke('skincare-history', {
+              body: {
+                action: 'save-scan',
+                data: {
+                  ...enhancedResult,
+                  scanImage: base64data
+                }
+              }
+            });
+          };
+          reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Error saving scan to history:', error);
+        }
+      }
     } catch (error) {
       console.error('Upload analysis error:', error);
       toast.error("Image analysis failed");
@@ -294,6 +343,12 @@ const SkinAnalyzer = () => {
           <div className="flex flex-col">
             <Card className="w-full h-full flex flex-col border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
               <CardContent className="flex-1 p-6 pt-12 flex flex-col items-center justify-center relative">
+                {/* Hidden canvas for capturing images */}
+                <canvas 
+                  ref={canvasRef}
+                  className="hidden"
+                />
+
                 {/* Camera preview and overlay */}
                 <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4">
                   <video 
@@ -386,6 +441,11 @@ const SkinAnalyzer = () => {
                       value={analysisResults.skinType}
                     />
                     <ResultCard 
+                      icon={<Palette className="h-5 w-5 text-green-400" />}
+                      title="Skin Tone"
+                      value={analysisResults.skinTone}
+                    />
+                    <ResultCard 
                       icon={<ShieldCheck className="h-5 w-5 text-primary" />}
                       title="Skin Issues"
                       value={analysisResults.skinIssues}
@@ -396,34 +456,36 @@ const SkinAnalyzer = () => {
                       value={analysisResults.sunDamage}
                     />
                     <ResultCard 
-                      icon={<Sparkles className="h-5 w-5 text-purple-400" />}
-                      title="Unique Feature"
-                      value={analysisResults.uniqueFeature}
+                      icon={<AlertTriangle className="h-5 w-5 text-red-400" />}
+                      title="Possible Disease"
+                      value={analysisResults.disease || "No disease detected"}
                     />
                     <ResultCard 
-                      icon={<Palette className="h-5 w-5 text-green-400" />}
-                      title="Skin Tone"
-                      value={analysisResults.skinTone}
+                      icon={<BarChart className="h-5 w-5 text-purple-400" />}
+                      title="Acne Severity"
+                      value={analysisResults.acneSeverity || "None"}
                     />
                   </>
                 ) : (
                   // Show empty state cards when no results
-                  Array.from({ length: 5 }).map((_, index) => (
+                  Array.from({ length: 6 }).map((_, index) => (
                     <EmptyResultCard
                       key={index}
                       icon={[
                         <Droplet />,
+                        <Palette />,
                         <ShieldCheck />,
                         <Sun />,
-                        <Sparkles />,
-                        <Palette />
+                        <AlertTriangle />,
+                        <BarChart />
                       ][index]}
                       title={[
                         "Skin Type",
+                        "Skin Tone",
                         "Skin Issues",
                         "Sun Damage",
-                        "Unique Feature",
-                        "Skin Tone"
+                        "Possible Disease",
+                        "Acne Severity"
                       ][index]}
                     />
                   ))

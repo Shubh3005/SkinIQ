@@ -83,7 +83,9 @@ serve(async (req) => {
         sunDamage,
         uniqueFeature,
         skinTone,
-        scanImage 
+        scanImage,
+        disease = 'No disease detected',
+        acneSeverity = 'None'
       } = data;
       
       const { data: scanData, error: scanError } = await supabaseClient
@@ -95,7 +97,9 @@ serve(async (req) => {
           sun_damage: sunDamage,
           unique_feature: uniqueFeature,
           skin_tone: skinTone,
-          scan_image: scanImage
+          scan_image: scanImage,
+          disease: disease,
+          acneSeverity: acneSeverity
         })
         .select()
         .single();
