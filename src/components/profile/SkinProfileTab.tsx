@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Droplet, Palette } from 'lucide-react';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -13,15 +15,37 @@ interface SkinProfileFormData {
   skin_tone: string;
 }
 
+const skinTypes = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'dry', label: 'Dry' },
+  { value: 'oily', label: 'Oily' },
+  { value: 'combination', label: 'Combination' },
+  { value: 'sensitive', label: 'Sensitive' }
+];
+
+const skinTones = [
+  { value: 'very_light', label: 'Very Light' },
+  { value: 'light', label: 'Light' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'olive', label: 'Olive' },
+  { value: 'tan', label: 'Tan' },
+  { value: 'deep', label: 'Deep' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'very_dark', label: 'Very Dark' }
+];
+
 export const SkinProfileTab = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<SkinProfileFormData>();
-  const skinType = watch('skin_type');
-  const skinTone = watch('skin_tone');
+  const form = useForm<SkinProfileFormData>({
+    defaultValues: {
+      skin_type: '',
+      skin_tone: ''
+    }
+  });
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchSkinProfile = async () => {
       if (!user) return;
       
       try {
@@ -30,14 +54,15 @@ export const SkinProfileTab = () => {
           .from('profiles')
           .select('skin_type, skin_tone')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
-          console.error('Error fetching profile:', error);
-          toast.error('Failed to load profile data');
+          console.error('Error fetching skin profile:', error);
+          toast.error('Failed to load skin profile data');
         } else if (data) {
-          setValue('skin_type', data.skin_type || '');
-          setValue('skin_tone', data.skin_tone || '');
+          // Safely access properties with optional chaining
+          form.setValue('skin_type', data.skin_type || '');
+          form.setValue('skin_tone', data.skin_tone || '');
         }
       } catch (error) {
         console.error('Error:', error);
@@ -47,8 +72,8 @@ export const SkinProfileTab = () => {
       }
     };
     
-    fetchProfile();
-  }, [user, setValue]);
+    fetchSkinProfile();
+  }, [user, form]);
 
   const onSubmit = async (formData: SkinProfileFormData) => {
     if (!user) return;
@@ -60,13 +85,13 @@ export const SkinProfileTab = () => {
         .from('profiles')
         .update({
           skin_type: formData.skin_type,
-          skin_tone: formData.skin_tone,
+          skin_tone: formData.skin_tone
         })
         .eq('id', user.id);
       
       if (error) {
-        toast.error('Failed to update profile');
-        console.error('Error updating profile:', error);
+        toast.error('Failed to update skin profile');
+        console.error('Error updating skin profile:', error);
       } else {
         toast.success('Skin profile updated successfully');
       }
@@ -79,58 +104,76 @@ export const SkinProfileTab = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="skin_type">Skin Type</Label>
-        <Select
-          onValueChange={(value) => setValue('skin_type', value)}
-          value={skinType}
-          disabled={isLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select your skin type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="dry">Dry</SelectItem>
-            <SelectItem value="oily">Oily</SelectItem>
-            <SelectItem value="combination">Combination</SelectItem>
-            <SelectItem value="sensitive">Sensitive</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          Your skin type helps us recommend appropriate skincare products and routines.
-        </p>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="skin_tone">Skin Tone</Label>
-        <Select
-          onValueChange={(value) => setValue('skin_tone', value)}
-          value={skinTone}
-          disabled={isLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select your skin tone" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="very_fair">Very Fair</SelectItem>
-            <SelectItem value="fair">Fair</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="olive">Olive</SelectItem>
-            <SelectItem value="tan">Tan</SelectItem>
-            <SelectItem value="deep">Deep</SelectItem>
-            <SelectItem value="very_deep">Very Deep</SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          Your skin tone helps us suggest products that work well with your complexion.
-        </p>
-      </div>
-      
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? 'Saving...' : 'Save Skin Profile'}
-      </Button>
-    </form>
+    <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10">
+      <CardContent className="pt-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="skin_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Droplet className="h-4 w-4 text-primary" />
+                    Skin Type
+                  </FormLabel>
+                  <Select
+                    disabled={isLoading}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your skin type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {skinTypes.map(type => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="skin_tone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Palette className="h-4 w-4 text-primary" />
+                    Skin Tone
+                  </FormLabel>
+                  <Select
+                    disabled={isLoading}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your skin tone" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {skinTones.map(tone => (
+                        <SelectItem key={tone.value} value={tone.value}>{tone.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? 'Saving...' : 'Save Skin Profile'}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };

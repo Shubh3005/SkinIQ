@@ -18,7 +18,7 @@ export const UserProfileCard = () => {
       className="w-full"
     >
       <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10 h-full">
-        <CardHeader className="bg-primary/10">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
             User Profile
