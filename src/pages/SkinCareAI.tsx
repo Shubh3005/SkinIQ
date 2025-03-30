@@ -91,7 +91,7 @@ const SkinCareAI = () => {
     setIsLoading(true);
     
     try {
-      // Call to Supabase Edge Function
+      // Call to Supabase Edge Function - fixed to pass correct parameters
       const { data, error } = await supabase.functions.invoke('skincare-ai', {
         body: {
           message: userMessage.message,

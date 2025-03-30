@@ -199,18 +199,6 @@ const RoutineCalendar = () => {
   const markRoutine = async (type: 'morning' | 'evening') => {
     if (!user || !selectedDate) return;
     
-    const today = new Date();
-    const selectedDay = new Date(selectedDate);
-    
-    if (selectedDay.toDateString() !== today.toDateString()) {
-      toast({
-        title: "Cannot update past days",
-        description: "You can only mark routines for today",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     
     try {
@@ -287,6 +275,14 @@ const RoutineCalendar = () => {
     return 'none';
   };
 
+  const getDayClass = (date: Date): string => {
+    const status = getDateStatus(date);
+    if (status === 'morning') return "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300";
+    if (status === 'evening') return "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300";
+    if (status === 'both') return "bg-green-200 text-green-800 font-medium hover:bg-green-300";
+    return "";
+  };
+
   return (
     <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
       <div className="flex justify-between items-center">
@@ -318,20 +314,20 @@ const RoutineCalendar = () => {
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto bg-card"
+            modifiers={{
+              morning: (date) => getDateStatus(date) === 'morning',
+              evening: (date) => getDateStatus(date) === 'evening',
+              both: (date) => getDateStatus(date) === 'both'
+            }}
+            modifiersClassNames={{
+              morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
+              evening: "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300",
+              both: "bg-green-200 text-green-800 font-medium hover:bg-green-300"
+            }}
             classNames={{
-              day: cn(
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
-                {
-                  "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": (day) => 
-                    getDateStatus(day) === 'morning',
-                  "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": (day) => 
-                    getDateStatus(day) === 'evening',
-                  "bg-green-200 text-green-800 font-medium hover:bg-green-300": (day) => 
-                    getDateStatus(day) === 'both'
-                }
-              ),
-              selected: "bg-primary text-primary-foreground rounded-full",
-              today: "bg-muted text-accent-foreground rounded-full border border-border"
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
+              day_selected: "bg-primary text-primary-foreground rounded-full",
+              day_today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
           />
           <div className="flex justify-center gap-6 mt-4">
@@ -365,7 +361,7 @@ const RoutineCalendar = () => {
                   variant={isMorningCompleted ? "default" : "outline"}
                   size="sm"
                   onClick={() => markRoutine('morning')}
-                  disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  disabled={!user}
                   className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}
                 >
                   {isMorningCompleted ? "Completed" : "Mark Complete"}
@@ -382,7 +378,7 @@ const RoutineCalendar = () => {
                   variant={isEveningCompleted ? "default" : "outline"}
                   size="sm"
                   onClick={() => markRoutine('evening')}
-                  disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  disabled={!user}
                   className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
                 >
                   {isEveningCompleted ? "Completed" : "Mark Complete"}

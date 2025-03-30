@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -260,14 +259,14 @@ Basic Routine:
 Morning
 
 - Cleanse
-- Moisturise
+- Moisturize
 - SPF
 
 Evening
 
 * 1 st Cleanse
 * 2 nd Cleanse
-* Moisturise
+* Moisturize
 
 Routine with extras, without retinoids (you absolutely don’t have to use all of these extras, this is just the order that it would be if you did):
 
@@ -339,34 +338,23 @@ serve(async (req) => {
   }
 
   try {
-    const { action, message, skin_type, concerns, include_actives } = await req.json();
+    const requestData = await req.json();
+    const { message, userSkinType, userSkinTone, history } = requestData;
     const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
     if (!openAIApiKey) {
       throw new Error("OpenAI API key is not configured");
     }
 
-    let userPrompt = "";
-    
-    // Handle different actions
-    if (action === "chat") {
-      if (!message) {
-        throw new Error("No message provided");
-      }
-      userPrompt = message;
-    } 
-    else if (action === "generate-routine") {
-      userPrompt = `
-      Using the skincare guide, generate a daily skincare routine for a user with:
-      - Skin type: ${skin_type || "normal"}
-      - Concerns: ${concerns ? concerns.join(", ") : "none specified"}
-      - Include actives: ${include_actives ? "Yes" : "No"}
-      Provide a morning and evening routine with specific product recommendations from the guide.
-      `;
-    } 
-    else {
-      throw new Error("Invalid action specified");
+    if (!message) {
+      throw new Error("No message provided");
     }
+
+    const userPrompt = message;
+    
+    console.log("Processing message:", userPrompt);
+    console.log("User skin type:", userSkinType || "Not provided");
+    console.log("User skin tone:", userSkinTone || "Not provided");
 
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -376,18 +364,20 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
+          ...(history || []),
           { role: "user", content: userPrompt }
         ],
         max_tokens: 800,
-        temperature: action === "chat" ? 0.7 : 0.5,
+        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("OpenAI API error:", errorData);
       throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
     }
 
@@ -395,7 +385,7 @@ serve(async (req) => {
     const result = data.choices[0].message.content.trim();
 
     return new Response(
-      JSON.stringify({ result }),
+      JSON.stringify({ message: result }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
