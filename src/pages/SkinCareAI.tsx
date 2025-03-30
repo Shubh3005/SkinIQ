@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Bot, RefreshCw, Scan, Image as ImageIcon } from 'lucide-react';
@@ -14,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
 import { Card } from '@/components/ui/card';
+import { parseProductsFromText } from '@/utils/productParser';
 
 interface Message {
   role: string;
@@ -35,6 +35,7 @@ const SkinCareAI = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   useEffect(() => {
     fetchSkinType();
@@ -120,13 +121,21 @@ const SkinCareAI = () => {
       }
       
       const data = await response.json();
+      const responseText = data.text || "I'm sorry, I couldn't process your request. Please try again.";
+      
       const botMessage: Message = {
         role: 'assistant',
-        content: data.text || "I'm sorry, I couldn't process your request. Please try again.",
+        content: responseText,
         timestamp: new Date(),
       };
       
       setMessages((prevMessages) => [...prevMessages, botMessage]);
+      
+      // Parse products from the response
+      const parsedProducts = parseProductsFromText(responseText);
+      if (parsedProducts.length > 0) {
+        setRecommendedProducts(parsedProducts);
+      }
       
       // Update the chat history with the AI response
       if (user) {
@@ -333,7 +342,7 @@ const SkinCareAI = () => {
               </div>
             </Card>
             
-            <RecommendedProducts />
+            <RecommendedProducts products={recommendedProducts} />
           </motion.div>
         </div>
       </main>
