@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { ImageUploader } from '@/components/skin-analyzer/ImageUploader';
 
 const SkinAnalyzer = () => {
   const { user } = useAuth();
@@ -371,6 +372,11 @@ const SkinAnalyzer = () => {
     }
   };
 
+  const handleImageSelected = (file: File) => {
+    console.log('Image selected:', file);
+    toast.success('Image uploaded successfully!');
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col">
       <AnimatedBackground />
@@ -421,7 +427,9 @@ const SkinAnalyzer = () => {
           </p>
         </motion.div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto w-full">
+        <div className="max-w-xl mx-auto w-full space-y-6">
+          <ImageUploader onImageSelected={handleImageSelected} />
+          
           <div className="flex flex-col">
             <Card className="w-full h-full flex flex-col border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
               <CardContent className="flex-1 p-6 pt-12 flex flex-col items-center justify-center relative">

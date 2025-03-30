@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface LogoProps {
@@ -9,16 +10,19 @@ interface LogoProps {
 
 const Logo = ({ size = 'md', className }: LogoProps) => {
   const sizeClasses = {
-    sm: 'text-xl',
-    md: 'text-2xl',
-    lg: 'text-3xl',
+    sm: 'h-8 w-8',
+    md: 'h-12 w-12',
+    lg: 'h-16 w-16',
   };
 
   return (
-    <div className={cn("font-bold flex items-center gap-1", sizeClasses[size], className)}>
-      <span className="text-primary">Skin</span>
-      <span className="text-foreground">IQ</span>
-    </div>
+    <Link to="/" className={cn("block", className)}>
+      <img
+        src="/lovable-uploads/f566f7be-209c-4029-9f3d-257aad2e8ca6.png"
+        alt="SkinIQ Logo"
+        className={cn(sizeClasses[size], "transition-transform hover:scale-105")}
+      />
+    </Link>
   );
 };
 

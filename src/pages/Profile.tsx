@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { UserProfileCard } from '@/components/profile/UserProfileCard';
 import { HistoryCard } from '@/components/profile/HistoryCard';
+import { HealthcareInfoCard } from '@/components/profile/HealthcareInfoCard';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -91,8 +92,9 @@ const Profile = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto w-full">
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-8">
             <UserProfileCard />
+            <HealthcareInfoCard />
           </div>
           <div className="flex flex-col">
             <HistoryCard 
