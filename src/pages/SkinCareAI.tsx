@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Bot, RefreshCw, Scan, Image as ImageIcon } from 'lucide-react';
@@ -261,7 +262,17 @@ const SkinCareAI = () => {
                       }`}
                   >
                     {message.role !== 'user' ? (
-                      <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-0 prose-li:my-0">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="my-1">{children}</p>,
+                          h1: ({ children }) => <h1 className="text-xl font-bold my-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-lg font-bold my-2">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-md font-bold my-2">{children}</h3>,
+                          ul: ({ children }) => <ul className="list-disc pl-5 my-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-5 my-1">{children}</ol>,
+                          li: ({ children }) => <li className="my-0.5">{children}</li>,
+                        }}
+                      >
                         {message.content}
                       </ReactMarkdown>
                     ) : (
