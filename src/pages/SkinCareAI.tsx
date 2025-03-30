@@ -38,6 +38,7 @@ const SkinCareAI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [personalized, setPersonalized] = useState<RoutineStep[]>([]);
   const [products, setProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState('routine');
   const [skinProfile, setSkinProfile] = useState<{type: string, tone: string} | null>(null);
   
   // Initial welcome message
@@ -130,39 +131,54 @@ const SkinCareAI = () => {
       
       setChatHistory(prev => [...prev, aiResponse]);
       
-      // Parse and store recommended products
-      const parsedProducts = parseProductsFromText(aiResponseText);
-      if (parsedProducts.length > 0) {
-        // Simplify product objects to just have product_name
-        const simplifiedProducts = parsedProducts.map(product => ({
-          product_name: product.product_name,
-          product_description: '',
-          product_link: ''
-        }));
+      // Check if this is about product recommendations
+      if (message.toLowerCase().includes('product') || 
+          message.toLowerCase().includes('recommend') ||
+          userMessage.message === "Recommend products for dry sensitive skin") {
         
-        setProducts(simplifiedProducts);
+        // Set active tab to products
+        setActiveTab('products');
         
-        // Save recommended products to database
-        if (user) {
-          try {
-            await supabase.from('recommended_products').insert(
-              simplifiedProducts.map(product => ({
-                user_id: user.id,
-                product_name: product.product_name,
-                product_description: null,
-                product_link: null
-              }))
-            );
-          } catch (err) {
-            console.error('Error saving products:', err);
+        // Parse and store recommended products
+        const parsedProducts = parseProductsFromText(aiResponseText);
+        if (parsedProducts.length > 0) {
+          // Simplify product objects to just have product_name
+          const simplifiedProducts = parsedProducts.map(product => ({
+            product_name: product.product_name,
+            product_description: '',
+            product_link: ''
+          }));
+          
+          setProducts(simplifiedProducts);
+          
+          // Save recommended products to database
+          if (user) {
+            try {
+              await supabase.from('recommended_products').insert(
+                simplifiedProducts.map(product => ({
+                  user_id: user.id,
+                  product_name: product.product_name,
+                  product_description: null,
+                  product_link: null
+                }))
+              );
+            } catch (err) {
+              console.error('Error saving products:', err);
+            }
           }
         }
       }
       
-      // Try to extract routine steps
+      // Check if this is about routine
       if (aiResponseText.toLowerCase().includes('routine') || 
           aiResponseText.toLowerCase().includes('steps') ||
-          message.toLowerCase().includes('routine')) {
+          message.toLowerCase().includes('routine') ||
+          userMessage.message === "What's a good routine for my skin type?") {
+          
+        // Set active tab to routine
+        setActiveTab('routine');
+        
+        // Try to extract routine steps
         const steps = extractRoutineSteps(aiResponseText);
         if (steps.length > 0) {
           setPersonalized(steps);
@@ -362,7 +378,10 @@ const SkinCareAI = () => {
                       variant="ghost"
                       size="sm"
                       className="text-xs text-muted-foreground"
-                      onClick={() => setMessage("What's a good routine for my skin type?")}
+                      onClick={() => {
+                        setMessage("What's a good routine for my skin type?");
+                        setActiveTab('routine'); // Switch to routine tab
+                      }}
                       disabled={isLoading}
                     >
                       Routine for my skin type
@@ -371,7 +390,10 @@ const SkinCareAI = () => {
                       variant="ghost"
                       size="sm"
                       className="text-xs text-muted-foreground"
-                      onClick={() => setMessage("Recommend products for dry sensitive skin")}
+                      onClick={() => {
+                        setMessage("Recommend products for dry sensitive skin");
+                        setActiveTab('products'); // Switch to products tab
+                      }}
                       disabled={isLoading}
                     >
                       Product recommendations
@@ -384,7 +406,7 @@ const SkinCareAI = () => {
           
           {/* Second column (results) - takes 2/5 of the space */}
           <div className="md:col-span-2 flex flex-col gap-6">
-            <Tabs defaultValue="routine" className="flex-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
               <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="routine" className="flex items-center gap-2">
                   <Check className="h-4 w-4" />
