@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Award, CheckCircle } from 'lucide-react';
+import { Trophy, Star, Award, CheckCircle, BarChart3 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLocation } from 'react-router-dom';
+import { ChartContainer } from "@/components/ui/chart";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 interface RoutineLogType {
   id: string;
@@ -41,6 +45,12 @@ interface AchievementType {
   created_at: string;
 }
 
+interface RoutineStatsType {
+  name: string;
+  value: number;
+  fill: string;
+}
+
 const RoutineCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [routineLogs, setRoutineLogs] = useState<RoutineLogType[]>([]);
@@ -50,8 +60,12 @@ const RoutineCalendar = () => {
   const [isEveningCompleted, setIsEveningCompleted] = useState(false);
   const [showAchievementDialog, setShowAchievementDialog] = useState(false);
   const [newAchievement, setNewAchievement] = useState<AchievementType | null>(null);
+  const [routineStats, setRoutineStats] = useState<RoutineStatsType[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const isProfilePage = location.pathname === '/profile';
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +77,7 @@ const RoutineCalendar = () => {
   useEffect(() => {
     if (routineLogs.length > 0) {
       calculateStreak();
+      calculateRoutineStats();
     }
   }, [routineLogs]);
 
@@ -111,6 +126,28 @@ const RoutineCalendar = () => {
     } catch (error) {
       console.error('Error fetching achievements:', error);
     }
+  };
+
+  const calculateRoutineStats = () => {
+    let morningOnly = 0;
+    let eveningOnly = 0;
+    let both = 0;
+    
+    routineLogs.forEach(log => {
+      if (log.morning_completed && log.evening_completed) {
+        both++;
+      } else if (log.morning_completed) {
+        morningOnly++;
+      } else if (log.evening_completed) {
+        eveningOnly++;
+      }
+    });
+    
+    setRoutineStats([
+      { name: "Morning Only", value: morningOnly, fill: "#FCD34D" },
+      { name: "Evening Only", value: eveningOnly, fill: "#93C5FD" },
+      { name: "Both Routines", value: both, fill: "#86EFAC" }
+    ]);
   };
 
   const calculateStreak = async () => {
@@ -166,6 +203,7 @@ const RoutineCalendar = () => {
     
     for (const milestone of streakMilestones) {
       if (currentStreak >= milestone.days) {
+        // Check if the user already has this achievement
         const hasAchievement = achievements.some(a => a.name === milestone.name);
         
         if (!hasAchievement) {
@@ -233,7 +271,9 @@ const RoutineCalendar = () => {
         type === 'morning' ? setIsMorningCompleted(true) : setIsEveningCompleted(true);
       }
       
-      fetchRoutineLogs();
+      await fetchRoutineLogs();
+      
+      calculateStreak();
       
       toast({
         title: "Routine updated",
@@ -247,6 +287,15 @@ const RoutineCalendar = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const getStreakColor = () => {
+    if (streak >= 30) return "from-violet-500 to-purple-700";
+    if (streak >= 20) return "from-blue-500 to-violet-500";
+    if (streak >= 14) return "from-cyan-500 to-blue-500";
+    if (streak >= 7) return "from-green-500 to-cyan-500";
+    if (streak >= 3) return "from-yellow-500 to-green-500";
+    return "from-orange-500 to-yellow-500";
   };
 
   const renderAchievementIcon = (icon: string) => {
@@ -294,8 +343,10 @@ const RoutineCalendar = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full">
-                  <Trophy className="h-4 w-4 text-primary" />
+                <div className={cn(
+                  "flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground"
+                )}>
+                  <Trophy className="h-4 w-4" />
                   <span className="font-semibold">{streak} Day Streak</span>
                 </div>
               </TooltipTrigger>
@@ -307,13 +358,13 @@ const RoutineCalendar = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col items-center">
           <Calendar
             mode="single"
             selected={selectedDate}
             onSelect={setSelectedDate}
-            className="rounded-md border pointer-events-auto bg-card"
+            className="rounded-md border pointer-events-auto bg-card mx-auto"
             modifiers={{
               morning: (date) => getDateStatus(date) === 'morning',
               evening: (date) => getDateStatus(date) === 'evening',
@@ -330,7 +381,7 @@ const RoutineCalendar = () => {
               day_today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
           />
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex justify-center gap-6 mt-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
               <span className="text-sm">Both Routines</span>
@@ -346,81 +397,104 @@ const RoutineCalendar = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-            <h3 className="font-semibold mb-3">{format(selectedDate || new Date(), 'MMMM d, yyyy')}</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-amber-100 p-2 rounded-full">
-                    <Star className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <span>Morning Routine</span>
-                </div>
-                <Button 
-                  variant={isMorningCompleted ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => markRoutine('morning')}
-                  disabled={!user}
-                  className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}
-                >
-                  {isMorningCompleted ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <Star className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <span>Evening Routine</span>
-                </div>
-                <Button 
-                  variant={isEveningCompleted ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => markRoutine('evening')}
-                  disabled={!user}
-                  className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
-                >
-                  {isEveningCompleted ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
+        <div className="md:col-span-12 lg:col-span-5 xl:col-span-4">
+          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Routine Statistics</h3>
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <BarChart3 className="h-3 w-3" />
+                Stats
+              </Badge>
+            </div>
+            
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={routineStats}>
+                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Your Achievements</h3>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Trophy className="h-3 w-3" />
-                {achievements.length}
-              </Badge>
+          {!isProfilePage && (
+            <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+              <h3 className="font-semibold mb-3">{format(selectedDate || new Date(), 'MMMM d, yyyy')}</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-amber-100 p-2 rounded-full">
+                      <Star className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <span>Morning Routine</span>
+                  </div>
+                  <Button 
+                    variant={isMorningCompleted ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => markRoutine('morning')}
+                    disabled={!user}
+                    className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}
+                  >
+                    {isMorningCompleted ? "Completed" : "Mark Complete"}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <Star className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span>Evening Routine</span>
+                  </div>
+                  <Button 
+                    variant={isEveningCompleted ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => markRoutine('evening')}
+                    disabled={!user}
+                    className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
+                  >
+                    {isEveningCompleted ? "Completed" : "Mark Complete"}
+                  </Button>
+                </div>
+              </div>
             </div>
-            {achievements.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
-                {achievements.slice(0, 4).map((achievement) => (
-                  <TooltipProvider key={achievement.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="bg-card p-2 rounded-md flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-default">
-                          {renderAchievementIcon(achievement.icon)}
-                          <span className="text-xs mt-1 font-medium">{achievement.name}</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{achievement.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-2">
-                <p className="text-sm">Complete routines to earn achievements</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
+
+      {isProfilePage && (
+        <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">Your Achievements</h3>
+          </div>
+          {achievements.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {achievements.slice(0, 6).map((achievement) => (
+                <TooltipProvider key={achievement.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-3 rounded-md flex flex-col items-center justify-center text-center transition-colors cursor-default bg-primary/10 hover:bg-primary/20 shadow-md border border-primary/10">
+                        <div className="p-2 rounded-full mb-2 bg-white/80 shadow-sm">
+                          {renderAchievementIcon(achievement.icon)}
+                        </div>
+                        <span className="text-sm font-medium">{achievement.name}</span>
+                        <span className="text-xs text-muted-foreground mt-1">{achievement.description}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{achievement.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-2">
+              <p className="text-sm">Complete routines to earn achievements</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <Dialog open={showAchievementDialog} onOpenChange={setShowAchievementDialog}>
         <DialogContent className="sm:max-w-md">
