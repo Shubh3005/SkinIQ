@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Droplet, Palette, ShieldCheck, Sun, AlertTriangle, BarChart } from 'lucide-react';
+import { Droplet, Palette, ShieldCheck, AlertTriangle, BarChart } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,7 +9,6 @@ type AnalysisResults = {
   skinType?: string;
   skinTone?: string;
   skinIssues?: string;
-  sunDamage?: string;
   disease?: string;
   acneSeverity?: string;
 };
@@ -51,11 +50,6 @@ export const ScanResults = ({ analysisResults }: ScanResultsProps) => {
                 value={analysisResults.skinIssues}
               />
               <ResultCard 
-                icon={<Sun className="h-5 w-5 text-amber-400" />}
-                title="Sun Damage"
-                value={analysisResults.sunDamage}
-              />
-              <ResultCard 
                 icon={<AlertTriangle className="h-5 w-5 text-red-400" />}
                 title="Possible Disease"
                 value={analysisResults.disease || "No disease detected"}
@@ -68,14 +62,13 @@ export const ScanResults = ({ analysisResults }: ScanResultsProps) => {
             </>
           ) : (
             // Show empty state cards when no results
-            Array.from({ length: 6 }).map((_, index) => (
+            Array.from({ length: 5 }).map((_, index) => (
               <EmptyResultCard
                 key={index}
                 icon={[
                   <Droplet />,
                   <Palette />,
                   <ShieldCheck />,
-                  <Sun />,
                   <AlertTriangle />,
                   <BarChart />
                 ][index]}
@@ -83,7 +76,6 @@ export const ScanResults = ({ analysisResults }: ScanResultsProps) => {
                   "Skin Type",
                   "Skin Tone",
                   "Skin Issues",
-                  "Sun Damage",
                   "Possible Disease",
                   "Acne Severity"
                 ][index]}
@@ -138,4 +130,3 @@ const EmptyResultCard = ({ icon, title, delay = 0 }: {
 
 // Fix missing Scan import
 import { Scan } from 'lucide-react';
-

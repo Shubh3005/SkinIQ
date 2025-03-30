@@ -1,58 +1,112 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// This is a mock implementation of the skin analysis API
-// to use when the local FastAPI server is not available
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
-    // Enable CORS
-    const headers = new Headers({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      'Content-Type': 'application/json',
-    });
-
-    // Handle preflight request
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { headers, status: 204 });
-    }
-
-    // Process the request
-    const body = await req.json();
-    const image = body.image;
+    // Parse request body (this would contain the image)
+    const { image } = await req.json();
     
+    // Verify the image was included
     if (!image) {
       return new Response(
-        JSON.stringify({ error: 'No image provided' }),
-        { headers, status: 400 }
+        JSON.stringify({ error: 'Image data is required' }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
-
-    // In a real implementation, this would analyze the image
-    // Instead, we return mock data
-    const mockAnalysisResult = {
-      skinType: ['Dry', 'Normal', 'Oily', 'Combination'][Math.floor(Math.random() * 4)],
-      skinTone: ['Fair', 'Light', 'Medium', 'Olive', 'Tan', 'Dark'][Math.floor(Math.random() * 6)],
-      skinIssues: ['Acne', 'Dryness', 'Redness', 'Sensitivity', 'Aging'][Math.floor(Math.random() * 5)],
-      sunDamage: ['Low', 'Moderate', 'High'][Math.floor(Math.random() * 3)],
-      disease: Math.random() > 0.8 ? 'Signs of potential dermatitis' : 'No disease detected',
-      acneSeverity: Math.random() > 0.7 ? ['Mild', 'Moderate', 'Severe'][Math.floor(Math.random() * 3)] : 'None'
+    
+    console.log("Received image data, length:", image.length);
+    
+    // Create a random skin analysis result
+    // This is a fallback if the machine learning model is not available
+    const analysisResult = {
+      skinType: getRandomSkinType(),
+      skinTone: getRandomSkinTone(),
+      skinIssues: getRandomSkinIssues(),
+      uniqueFeature: getRandomUniqueFeature(),
+      disease: getRandomDisease(),
+      acneSeverity: getRandomAcneSeverity(),
     };
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
+    
+    // Simulate some processing time (0.5-1.5 seconds)
+    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+    
     return new Response(
-      JSON.stringify(mockAnalysisResult),
-      { headers, status: 200 }
+      JSON.stringify(analysisResult),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error("Error in predict-mock function:", error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Internal server error" }),
       { 
-        headers: { 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
 });
+
+// Helper functions to generate random skin analysis results
+function getRandomSkinType() {
+  const types = ['Normal', 'Dry', 'Oily', 'Combination', 'Sensitive'];
+  return types[Math.floor(Math.random() * types.length)];
+}
+
+function getRandomSkinTone() {
+  const tones = ['Fair', 'Light', 'Medium', 'Olive', 'Tan', 'Deep', 'Dark'];
+  return tones[Math.floor(Math.random() * tones.length)];
+}
+
+function getRandomSkinIssues() {
+  const issues = [
+    'None detected', 
+    'Mild dryness', 
+    'Slight redness', 
+    'Minor blemishes',
+    'Fine lines', 
+    'Hyperpigmentation', 
+    'Enlarged pores'
+  ];
+  return issues[Math.floor(Math.random() * issues.length)];
+}
+
+function getRandomUniqueFeature() {
+  const features = [
+    'None detected',
+    'Freckles', 
+    'Beauty marks', 
+    'Even skin texture',
+    'Natural glow', 
+    'Strong skin barrier'
+  ];
+  return features[Math.floor(Math.random() * features.length)];
+}
+
+function getRandomDisease() {
+  const diseases = [
+    'No disease detected',
+    'Mild eczema',
+    'Possible rosacea',
+    'Minor dermatitis'
+  ];
+  return diseases[Math.floor(Math.random() * diseases.length)];
+}
+
+function getRandomAcneSeverity() {
+  const severities = ['None', 'Mild', 'Moderate', 'Severe'];
+  return severities[Math.floor(Math.random() * severities.length)];
+}

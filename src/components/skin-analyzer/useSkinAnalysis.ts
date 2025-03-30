@@ -44,6 +44,11 @@ export const useSkinAnalysis = (user: any) => {
     
     try {
       console.log('Sending request to FastAPI prediction service...');
+      console.log('Image base64 length:', imageBase64.length);
+      
+      // Extract only the base64 data part without the prefix
+      const base64Data = imageBase64.split(',')[1];
+      console.log('Base64 data length (without prefix):', base64Data.length);
 
       // Call the FastAPI endpoint with robust error handling
       const response = await fetch('http://127.0.0.1:8000/predict', {
@@ -55,7 +60,7 @@ export const useSkinAnalysis = (user: any) => {
           image: imageBase64
         }),
         // Set a timeout to handle connection issues
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        signal: AbortSignal.timeout(15000) // 15 second timeout
       });
 
       console.log('API response status:', response.status);
@@ -80,8 +85,6 @@ export const useSkinAnalysis = (user: any) => {
             user_id: user.id,
             skin_type: data.skinType,
             skin_issues: data.skinIssues,
-            sun_damage: data.sunDamage,
-            unique_feature: data.uniqueFeature,
             skin_tone: data.skinTone,
             scan_image: imageBase64,
             disease: data.disease || "No disease detected",

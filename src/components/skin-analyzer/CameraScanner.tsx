@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Scan, X, Zap, Loader2, AlertTriangle } from 'lucide-react';
@@ -206,6 +207,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
       
       // Convert canvas to base64
       const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('Image base64 length:', imageBase64.length);
       
       if (onScanImageCaptured) {
         onScanImageCaptured(imageBase64);
@@ -217,7 +219,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
       try {
         // Call the FastAPI endpoint with timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
         const response = await fetch('http://127.0.0.1:8000/predict', {
           method: 'POST',
@@ -236,6 +238,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
         }
 
         const data = await response.json();
+        console.log('API response data:', data);
         
         setAnalysisProgress(100);
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -252,8 +255,6 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
               user_id: user.id,
               skin_type: data.skinType,
               skin_issues: data.skinIssues,
-              sun_damage: data.sunDamage,
-              unique_feature: data.uniqueFeature,
               skin_tone: data.skinTone,
               scan_image: imageBase64,
               disease: data.disease || "No disease detected",
@@ -287,6 +288,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
             throw new Error(`Fallback API error: ${mockError.message}`);
           }
 
+          console.log('Fallback API response:', mockData);
           setAnalysisProgress(100);
           onAnalysisComplete(mockData);
           setScanComplete(true);
@@ -299,8 +301,6 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
                 user_id: user.id,
                 skin_type: mockData.skinType,
                 skin_issues: mockData.skinIssues,
-                sun_damage: mockData.sunDamage,
-                unique_feature: mockData.uniqueFeature,
                 skin_tone: mockData.skinTone,
                 scan_image: imageBase64,
                 disease: mockData.disease || "No disease detected",
