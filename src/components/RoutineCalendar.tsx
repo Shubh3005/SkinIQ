@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface RoutineLogType {
   id: string;
@@ -16,24 +15,9 @@ interface RoutineLogType {
   created_at: string;
 }
 
-interface AchievementType {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  user_id: string;
-  created_at: string;
-}
-
 const RoutineCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [routineLogs, setRoutineLogs] = useState<RoutineLogType[]>([]);
-  const [achievements, setAchievements] = useState<AchievementType[]>([]);
-  const [streak, setStreak] = useState(0);
-  const [isMorningCompleted, setIsMorningCompleted] = useState(false);
-  const [isEveningCompleted, setIsEveningCompleted] = useState(false);
-  const [showAchievementDialog, setShowAchievementDialog] = useState(false);
-  const [newAchievement, setNewAchievement] = useState<AchievementType | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -41,22 +25,7 @@ const RoutineCalendar = () => {
   useEffect(() => {
     if (!user) return;
     fetchRoutineLogs();
-    fetchAchievements();
   }, [user, selectedDate]);
-
-  useEffect(() => {
-    if (routineLogs.length > 0) {
-      calculateStreak();
-    }
-  }, [routineLogs]);
-
-  useEffect(() => {
-    if (!selectedDate || !routineLogs.length) return;
-    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-    const todayLog = routineLogs.find(log => log.date === formattedDate);
-    setIsMorningCompleted(todayLog?.morning_completed || false);
-    setIsEveningCompleted(todayLog?.evening_completed || false);
-  }, [selectedDate, routineLogs]);
 
   const fetchRoutineLogs = async () => {
     if (!user) return;
@@ -74,160 +43,6 @@ const RoutineCalendar = () => {
       toast({
         title: "Error",
         description: "Failed to load routine data",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const fetchAchievements = async () => {
-    if (!user) return;
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from('achievements').select('*').eq('user_id', user.id).order('created_at', {
-        ascending: false
-      });
-      if (error) throw error;
-      setAchievements(data || []);
-    } catch (error) {
-      console.error('Error fetching achievements:', error);
-    }
-  };
-
-  const calculateStreak = async () => {
-    const sortedLogs = [...routineLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    let currentStreak = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const todayFormatted = format(today, 'yyyy-MM-dd');
-    const todayLog = sortedLogs.find(log => log.date === todayFormatted);
-    if (todayLog && (todayLog.morning_completed || todayLog.evening_completed)) {
-      currentStreak++;
-    }
-    let checkDate = yesterday;
-    let dayCounter = 1;
-    while (dayCounter < 30) {
-      const dateFormatted = format(checkDate, 'yyyy-MM-dd');
-      const log = sortedLogs.find(log => log.date === dateFormatted);
-      if (log && log.morning_completed && log.evening_completed) {
-        currentStreak++;
-      } else {
-        break;
-      }
-      checkDate.setDate(checkDate.getDate() - 1);
-      dayCounter++;
-    }
-    setStreak(currentStreak);
-    checkStreakAchievements(currentStreak);
-  };
-
-  const checkStreakAchievements = async (currentStreak: number) => {
-    if (!user) return;
-    const streakMilestones = [{
-      days: 3,
-      name: "Getting Started",
-      description: "Completed routines for 3 days in a row",
-      icon: "check"
-    }, {
-      days: 7,
-      name: "One Week Wonder",
-      description: "Completed routines for a full week",
-      icon: "star"
-    }, {
-      days: 14,
-      name: "Consistency Champion",
-      description: "Two weeks of dedicated skincare",
-      icon: "award"
-    }, {
-      days: 30,
-      name: "Skincare Master",
-      description: "A full month of perfect routines",
-      icon: "trophy"
-    }];
-    for (const milestone of streakMilestones) {
-      if (currentStreak >= milestone.days) {
-        // Check if user already has this achievement
-        const hasAchievement = achievements.some(a => a.name === milestone.name);
-        if (!hasAchievement) {
-          try {
-            // First check if there's already an achievement in the database with this name
-            const {
-              data: existingAchievement,
-              error: checkError
-            } = await supabase.from('achievements').select('*').eq('user_id', user.id).eq('name', milestone.name).maybeSingle();
-            if (checkError) throw checkError;
-
-            // Only create if achievement doesn't exist
-            if (!existingAchievement) {
-              const {
-                data,
-                error
-              } = await supabase.from('achievements').insert({
-                user_id: user.id,
-                name: milestone.name,
-                description: milestone.description,
-                icon: milestone.icon
-              }).select().single();
-              if (error) throw error;
-              if (data) {
-                setNewAchievement(data);
-                setShowAchievementDialog(true);
-                setAchievements(prev => [...prev, data]);
-              }
-            }
-          } catch (error) {
-            console.error('Error creating achievement:', error);
-          }
-        }
-      }
-    }
-  };
-
-  const markRoutine = async (type: 'morning' | 'evening') => {
-    if (!user || !selectedDate) return;
-    const today = new Date();
-    const selectedDay = new Date(selectedDate);
-    if (selectedDay.toDateString() !== today.toDateString()) {
-      toast({
-        title: "Cannot update past days",
-        description: "You can only mark routines for today",
-        variant: "destructive"
-      });
-      return;
-    }
-    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-    try {
-      const {
-        data: existingLog
-      } = await supabase.from('routine_logs').select('*').eq('user_id', user.id).eq('date', formattedDate).single();
-      if (existingLog) {
-        await supabase.from('routine_logs').update({
-          [type === 'morning' ? 'morning_completed' : 'evening_completed']: !existingLog[type === 'morning' ? 'morning_completed' : 'evening_completed']
-        }).eq('id', existingLog.id);
-        type === 'morning' ? setIsMorningCompleted(!existingLog.morning_completed) : setIsEveningCompleted(!existingLog.evening_completed);
-      } else {
-        const newLog = {
-          user_id: user.id,
-          date: formattedDate,
-          morning_completed: type === 'morning',
-          evening_completed: type === 'evening'
-        };
-        await supabase.from('routine_logs').insert(newLog);
-        type === 'morning' ? setIsMorningCompleted(true) : setIsEveningCompleted(true);
-      }
-      fetchRoutineLogs();
-      toast({
-        title: "Routine updated",
-        description: `Your ${type} routine has been marked as completed!`
-      });
-    } catch (error) {
-      console.error('Error updating routine:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update routine",
         variant: "destructive"
       });
     }
@@ -283,29 +98,6 @@ const RoutineCalendar = () => {
           <span className="text-sm">Evening Only</span>
         </div>
       </div>
-
-      <Dialog open={showAchievementDialog} onOpenChange={setShowAchievementDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">🎉 Achievement Unlocked! 🎉</DialogTitle>
-            <DialogDescription className="text-center">
-              You've earned a new achievement badge!
-            </DialogDescription>
-          </DialogHeader>
-          {newAchievement && <div className="flex flex-col items-center py-6">
-              <div className="mb-4 bg-primary/10 p-6 rounded-full">
-                {/* Render achievement icon here */}
-              </div>
-              <h3 className="text-xl font-bold mb-2">{newAchievement.name}</h3>
-              <p className="text-center text-muted-foreground">{newAchievement.description}</p>
-            </div>}
-          <DialogFooter>
-            <Button onClick={() => setShowAchievementDialog(false)} className="w-full">
-              Awesome!
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
