@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CalendarDays, ClipboardList } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface HistoryCardProps {
   scanHistory: any[];
@@ -66,7 +65,7 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4">
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -116,17 +115,15 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
 
             <h3 className="text-xl font-semibold mb-2">Recent Chats</h3>
             {chatHistory.length > 0 ? (
-              <ScrollArea className="h-[200px]">
-                <div className="space-y-4">
-                  {chatHistory.map((chat, index) => (
-                    <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
-                      <h4 className="font-medium">Chat #{index + 1}</h4>
-                      <p className="text-sm text-muted-foreground">Message: {chat.message}</p>
-                      <p className="text-sm text-muted-foreground">Response: {chat.response}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+              <div className="space-y-4">
+                {chatHistory.slice(0, 3).map((chat, index) => (
+                  <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
+                    <h4 className="font-medium">Chat #{index + 1}</h4>
+                    <p className="text-sm text-muted-foreground">Message: {chat.message}</p>
+                    <p className="text-sm text-muted-foreground">Response: {chat.response}</p>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-center text-muted-foreground">
                 No chat history found.

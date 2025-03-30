@@ -1,15 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProfileFormData {
   full_name: string;
+  skin_type: string;
 }
 
 const ProfileForm = () => {
@@ -25,7 +26,7 @@ const ProfileForm = () => {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, skin_type')
           .eq('id', user.id)
           .maybeSingle(); // Using maybeSingle instead of single to handle cases where profile might not exist
         
@@ -35,6 +36,7 @@ const ProfileForm = () => {
           toast.error('Failed to load profile data');
         } else if (data) {
           setValue('full_name', data.full_name || '');
+          setValue('skin_type', data.skin_type || '');
         } else {
           // If no profile was found, we'll create one
           const { error: createError } = await supabase
@@ -69,6 +71,7 @@ const ProfileForm = () => {
         .from('profiles')
         .update({
           full_name: formData.full_name,
+          skin_type: formData.skin_type,
         })
         .eq('id', user.id);
       
@@ -102,15 +105,22 @@ const ProfileForm = () => {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={user?.email || ''}
-          disabled={true}
-          className="bg-gray-100"
-        />
-        <p className="text-xs text-muted-foreground">Your email cannot be changed</p>
+        <Label htmlFor="skin_type">Skin Type</Label>
+        <Select
+          onValueChange={(value) => setValue('skin_type', value)}
+          disabled={isLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select your skin type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="dry">Dry</SelectItem>
+            <SelectItem value="oily">Oily</SelectItem>
+            <SelectItem value="combination">Combination</SelectItem>
+            <SelectItem value="sensitive">Sensitive</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <Button type="submit" disabled={isLoading}>
