@@ -231,7 +231,7 @@ const SkinAnalyzer = () => {
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(50);
 
-      // Call the external API
+      // Call the external API - using fetch with error handling
       const response = await fetch('http://127.0.0.1:8000/predict', {
         method: 'POST',
         headers: {
@@ -271,9 +271,9 @@ const SkinAnalyzer = () => {
           console.error('Error saving scan to history:', error);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing image:', error);
-      toast.error(`Analysis failed: ${error.message}. Please try again.`);
+      toast.error(`Analysis failed: ${error.message || 'Connection to analysis server failed'}. Please try again.`);
     } finally {
       setAnalyzing(false);
     }
@@ -298,49 +298,59 @@ const SkinAnalyzer = () => {
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(60);
 
-      // Call the external API
-      const response = await fetch('http://127.0.0.1:8000/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: imageBase64
-        }),
-      });
+      console.log('Sending request to prediction API...');
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
+      // Call the external API with more robust error handling
+      try {
+        const response = await fetch('http://127.0.0.1:8000/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imageBase64
+          }),
+        });
 
-      const data = await response.json();
-      
-      setAnalysisProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Set the results from the API
-      setAnalysisResults(data);
-      setScanComplete(true);
-      toast.success("Analysis complete");
+        console.log('API response status:', response.status);
 
-      if (user) {
-        try {
-          await supabase.functions.invoke('skincare-history', {
-            body: {
-              action: 'save-scan',
-              data: {
-                ...data,
-                scanImage: imageBase64
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Error saving scan to history:', error);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
         }
+
+        const data = await response.json();
+        console.log('API response data:', data);
+        
+        setAnalysisProgress(100);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Set the results from the API
+        setAnalysisResults(data);
+        setScanComplete(true);
+        toast.success("Analysis complete");
+
+        if (user) {
+          try {
+            await supabase.functions.invoke('skincare-history', {
+              body: {
+                action: 'save-scan',
+                data: {
+                  ...data,
+                  scanImage: imageBase64
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error saving scan to history:', error);
+          }
+        }
+      } catch (error: any) {
+        console.error('API fetch error:', error);
+        toast.error(`Image analysis failed: ${error.message || 'Connection to analysis server failed'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload analysis error:', error);
-      toast.error(`Image analysis failed: ${error.message}`);
+      toast.error(`Image preparation failed: ${error.message || 'Unknown error occurred'}`);
     } finally {
       setAnalyzing(false);
     }

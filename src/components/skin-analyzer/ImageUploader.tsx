@@ -43,6 +43,11 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
   };
 
   const removeSelectedImage = () => {
+    // Clean up the URL object to avoid memory leaks
+    if (selectedImage) {
+      URL.revokeObjectURL(selectedImage);
+    }
+    
     setSelectedImage(null);
     setSelectedFile(null);
     if (fileInputRef.current) {
@@ -140,4 +145,4 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
       </Card>
     </motion.div>
   );
-};
+}
