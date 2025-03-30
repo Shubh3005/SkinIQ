@@ -38,7 +38,6 @@ const skinTones = [
 export const SkinProfileTab = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSavedProfile, setHasSavedProfile] = useState(false);
   const form = useForm<SkinProfileFormData>({
     defaultValues: {
       skin_type: '',
@@ -65,11 +64,9 @@ export const SkinProfileTab = () => {
           // Safely access properties with optional chaining
           if (data.skin_type) {
             form.setValue('skin_type', data.skin_type);
-            setHasSavedProfile(true);
           }
           if (data.skin_tone) {
             form.setValue('skin_tone', data.skin_tone);
-            setHasSavedProfile(true);
           }
         }
       } catch (error) {
@@ -102,7 +99,6 @@ export const SkinProfileTab = () => {
         console.error('Error updating skin profile:', error);
       } else {
         toast.success('Skin profile updated successfully');
-        setHasSavedProfile(true);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -127,13 +123,13 @@ export const SkinProfileTab = () => {
                     Skin Type
                   </FormLabel>
                   <Select
-                    disabled={isLoading || hasSavedProfile}
+                    disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className={hasSavedProfile ? "bg-muted/50" : ""}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select your skin type" />
                       </SelectTrigger>
                     </FormControl>
@@ -143,9 +139,6 @@ export const SkinProfileTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {hasSavedProfile && (
-                    <p className="text-xs text-muted-foreground">Skin type cannot be changed once set</p>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -161,13 +154,13 @@ export const SkinProfileTab = () => {
                     Skin Tone
                   </FormLabel>
                   <Select
-                    disabled={isLoading || hasSavedProfile}
+                    disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className={hasSavedProfile ? "bg-muted/50" : ""}>
+                      <SelectTrigger>
                         <SelectValue placeholder="Select your skin tone" />
                       </SelectTrigger>
                     </FormControl>
@@ -177,16 +170,13 @@ export const SkinProfileTab = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  {hasSavedProfile && (
-                    <p className="text-xs text-muted-foreground">Skin tone cannot be changed once set</p>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" disabled={isLoading || hasSavedProfile} className="w-full">
-              {isLoading ? 'Saving...' : hasSavedProfile ? 'Profile Saved' : 'Save Skin Profile'}
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? 'Saving...' : 'Save Skin Profile'}
             </Button>
           </form>
         </Form>
