@@ -30,6 +30,11 @@ interface RoutineStep {
   time?: 'morning' | 'evening' | 'both';
 }
 
+interface SkinProfile {
+  type: string;
+  tone: string;
+}
+
 const SkinCareAI = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -39,9 +44,10 @@ const SkinCareAI = () => {
   const [personalized, setPersonalized] = useState<RoutineStep[]>([]);
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState('routine');
-  const [skinProfile, setSkinProfile] = useState<{type: string, tone: string} | null>(null);
+  const [skinProfile, setSkinProfile] = useState<SkinProfile | null>(null);
+  const [loadingSkinProfile, setLoadingSkinProfile] = useState(true);
   
-  // Initial welcome message
+  // Initial welcome message and fetch user's skin profile
   useEffect(() => {
     setChatHistory([
       {
@@ -55,6 +61,7 @@ const SkinCareAI = () => {
     const fetchSkinProfile = async () => {
       if (!user) return;
       
+      setLoadingSkinProfile(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -65,13 +72,23 @@ const SkinCareAI = () => {
         if (error) {
           console.error('Error fetching skin profile:', error);
         } else if (data) {
-          setSkinProfile({
+          const profile = {
             type: data.skin_type || '',
             tone: data.skin_tone || ''
-          });
+          };
+          setSkinProfile(profile);
+          
+          if (!profile.type || !profile.tone) {
+            toast.info(
+              "Complete your skin profile for better recommendations", 
+              { description: "Visit your profile to set your skin type and tone" }
+            );
+          }
         }
       } catch (error) {
         console.error('Error:', error);
+      } finally {
+        setLoadingSkinProfile(false);
       }
     };
     
@@ -92,12 +109,16 @@ const SkinCareAI = () => {
     setIsLoading(true);
     
     try {
-      // Call to Supabase Edge Function - fixed to pass correct parameters
+      // Check if we have a skin profile to send to the AI
+      const skinType = skinProfile?.type || '';
+      const skinTone = skinProfile?.tone || '';
+      
+      // Call to Supabase Edge Function with user's skin profile
       const { data, error } = await supabase.functions.invoke('skincare-ai', {
         body: {
           message: userMessage.message,
-          userSkinType: skinProfile?.type || '',
-          userSkinTone: skinProfile?.tone || '',
+          userSkinType: skinType,
+          userSkinTone: skinTone,
           history: chatHistory.map(msg => ({
             role: msg.sender === 'user' ? 'user' : 'assistant',
             content: msg.message
@@ -113,7 +134,7 @@ const SkinCareAI = () => {
       
       let aiResponseText = data.message || 'Sorry, I couldn\'t process your request';
       
-      // Remove markdown symbols: headings (#), bold/italic markers, bullet points, etc.
+      // Remove markdown symbols for cleaner display
       aiResponseText = aiResponseText
         .replace(/#{1,6}\s+/g, '') // Remove heading markers
         .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
@@ -131,10 +152,10 @@ const SkinCareAI = () => {
       
       setChatHistory(prev => [...prev, aiResponse]);
       
-      // Check if this is about product recommendations
+      // If AI response contains product recommendations
       if (message.toLowerCase().includes('product') || 
           message.toLowerCase().includes('recommend') ||
-          userMessage.message === "Recommend products for dry sensitive skin") {
+          userMessage.message.toLowerCase().includes("sensitive skin")) {
         
         // Set active tab to products
         setActiveTab('products');
@@ -142,7 +163,6 @@ const SkinCareAI = () => {
         // Parse and store recommended products
         const parsedProducts = parseProductsFromText(aiResponseText);
         if (parsedProducts.length > 0) {
-          // Simplify product objects to just have product_name
           const simplifiedProducts = parsedProducts.map(product => ({
             product_name: product.product_name,
             product_description: '',
@@ -169,11 +189,11 @@ const SkinCareAI = () => {
         }
       }
       
-      // Check if this is about routine
+      // If AI response contains routine information
       if (aiResponseText.toLowerCase().includes('routine') || 
           aiResponseText.toLowerCase().includes('steps') ||
           message.toLowerCase().includes('routine') ||
-          userMessage.message === "What's a good routine for my skin type?") {
+          userMessage.message.toLowerCase().includes("routine")) {
           
         // Set active tab to routine
         setActiveTab('routine');
@@ -299,10 +319,21 @@ const SkinCareAI = () => {
           <p className="text-muted-foreground mt-2">
             Get personalized skincare advice and product recommendations
           </p>
+          
+          {skinProfile && (skinProfile.type || skinProfile.tone) && (
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <Badge variant="outline" className="bg-primary/5">
+                {skinProfile.type ? skinProfile.type : "Skin type not set"}
+              </Badge>
+              <Badge variant="outline" className="bg-primary/5">
+                {skinProfile.tone ? skinProfile.tone : "Skin tone not set"}
+              </Badge>
+            </div>
+          )}
         </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 max-w-screen-xl w-full flex-1">
-          {/* First column (chat) - takes 3/5 of the space */}
+          {/* Chat column */}
           <div className="md:col-span-3 flex flex-col">
             <Card className="flex-1 border-2 border-primary/20 shadow-lg shadow-primary/10 flex flex-col h-[600px]">
               <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
@@ -312,6 +343,11 @@ const SkinCareAI = () => {
                 </CardTitle>
                 <CardDescription>
                   Ask questions about skincare routines and get personalized advice
+                  {!skinProfile?.type && !skinProfile?.tone && !loadingSkinProfile && (
+                    <div className="mt-1 text-amber-500">
+                      ⚠️ Set your skin profile in your account for better recommendations
+                    </div>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
@@ -404,7 +440,7 @@ const SkinCareAI = () => {
             </Card>
           </div>
           
-          {/* Second column (results) - takes 2/5 of the space */}
+          {/* Results column */}
           <div className="md:col-span-2 flex flex-col gap-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
               <TabsList className="w-full grid grid-cols-2">
