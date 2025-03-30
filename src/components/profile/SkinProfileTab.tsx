@@ -63,6 +63,9 @@ export const SkinProfileTab = () => {
           // Safely access properties with optional chaining
           form.setValue('skin_type', data.skin_type || '');
           form.setValue('skin_tone', data.skin_tone || '');
+          
+          // Log the data for debugging
+          console.log('Loaded skin profile data:', data);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -94,6 +97,9 @@ export const SkinProfileTab = () => {
         console.error('Error updating skin profile:', error);
       } else {
         toast.success('Skin profile updated successfully');
+        
+        // Log the updated data
+        console.log('Updated skin profile:', formData);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -121,6 +127,7 @@ export const SkinProfileTab = () => {
                     disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -151,6 +158,7 @@ export const SkinProfileTab = () => {
                     disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
