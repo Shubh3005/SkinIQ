@@ -69,7 +69,7 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
       <CardContent className="p-6">
         <div className="space-y-6">
           <div className="mb-4">
-            <RoutineCalendar />
+            <RoutineCalendar variant="simple" />
           </div>
 
           <div className="space-y-4">

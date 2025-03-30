@@ -233,7 +233,7 @@ const Index = () => {
           {user ? (
             <div className="space-y-8">
               <div className="grid grid-cols-1">
-                <RoutineCalendar />
+                <RoutineCalendar variant="full" />
               </div>
             </div>
           ) : (
