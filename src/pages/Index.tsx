@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +17,6 @@ const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
   const {
     user,
     signOut
@@ -128,6 +126,11 @@ const Index = () => {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  {profileData && profileData.skin_type && <div className="px-2 py-1 text-sm text-muted-foreground">
+                      Skin type: {profileData.skin_type}
+                    </div>}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem className="flex items-center" onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
@@ -231,11 +234,7 @@ const Index = () => {
           </div>
           
           {user ? (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1">
-                <RoutineCalendar variant="full" />
-              </div>
-            </div>
+            <RoutineCalendar />
           ) : (
             <div className="text-center bg-card p-10 rounded-xl shadow-md">
               <h3 className="text-xl font-semibold mb-4">Sign in to track your routines</h3>

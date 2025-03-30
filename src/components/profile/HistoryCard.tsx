@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CalendarDays, ClipboardList } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import RoutineCalendar from '@/components/RoutineCalendar';
 
 interface HistoryCardProps {
   scanHistory: any[];
@@ -67,65 +65,72 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="space-y-6">
-          <div className="mb-4">
-            <RoutineCalendar variant="simple" />
-          </div>
+        <div className="mb-4">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-md border"
+            classNames={{
+              day: cn(
+                "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                {
+                  "bg-primary/20 text-primary-foreground font-bold": hasEventsForDate
+                }
+              )
+            }}
+          />
+        </div>
 
-          <div className="space-y-4">
-            {loadingHistory ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading history...
+        {loadingHistory ? (
+          <div className="flex items-center justify-center">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading history...
+          </div>
+        ) : (
+          <>
+            {selectedDate && getScansForDate(selectedDate).length > 0 ? (
+              <>
+                <h3 className="text-xl font-semibold mb-2">Scans for {formatDate(selectedDate)}</h3>
+                <div className="space-y-4">
+                  {getScansForDate(selectedDate).map((scan, index) => (
+                    <div key={scan.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
+                      <h4 className="font-medium">Scan #{index + 1}</h4>
+                      <p className="text-sm text-muted-foreground">Skin Type: {scan.skin_type}</p>
+                      <p className="text-sm text-muted-foreground">Skin Issues: {scan.skin_issues}</p>
+                      <p className="text-sm text-muted-foreground">Sun Damage: {scan.sun_damage}</p>
+                      <p className="text-sm text-muted-foreground">Unique Feature: {scan.unique_feature}</p>
+                      <p className="text-sm text-muted-foreground">Skin Tone: {scan.skin_tone}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-muted-foreground">
+                No scans found for this date.
+              </div>
+            )}
+
+            <div className="my-4 border-t" />
+
+            <h3 className="text-xl font-semibold mb-2">Recent Chats</h3>
+            {chatHistory.length > 0 ? (
+              <div className="space-y-4">
+                {chatHistory.slice(0, 3).map((chat, index) => (
+                  <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
+                    <h4 className="font-medium">Chat #{index + 1}</h4>
+                    <p className="text-sm text-muted-foreground">Message: {chat.message}</p>
+                    <p className="text-sm text-muted-foreground">Response: {chat.response}</p>
+                  </div>
+                ))}
               </div>
             ) : (
-              <>
-                {selectedDate && getScansForDate(selectedDate).length > 0 ? (
-                  <>
-                    <h3 className="text-xl font-semibold mb-2">Scans for {formatDate(selectedDate)}</h3>
-                    <div className="space-y-4">
-                      {getScansForDate(selectedDate).map((scan, index) => (
-                        <div key={scan.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
-                          <h4 className="font-medium">Scan #{index + 1}</h4>
-                          <p className="text-sm text-muted-foreground">Skin Type: {scan.skin_type}</p>
-                          <p className="text-sm text-muted-foreground">Skin Issues: {scan.skin_issues}</p>
-                          <p className="text-sm text-muted-foreground">Sun Damage: {scan.sun_damage}</p>
-                          <p className="text-sm text-muted-foreground">Unique Feature: {scan.unique_feature}</p>
-                          <p className="text-sm text-muted-foreground">Skin Tone: {scan.skin_tone}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    No scans found for this date.
-                  </div>
-                )}
-
-                <div className="my-4 border-t" />
-
-                <h3 className="text-xl font-semibold mb-2">Recent Chats</h3>
-                {chatHistory.length > 0 ? (
-                  <ScrollArea className="h-[250px] pr-4 -mr-4">
-                    <div className="space-y-4">
-                      {chatHistory.map((chat, index) => (
-                        <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
-                          <h4 className="font-medium">Chat #{index + 1}</h4>
-                          <p className="text-sm text-muted-foreground">Message: {chat.message}</p>
-                          <p className="text-sm text-muted-foreground">Response: {chat.response}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    No chat history found.
-                  </div>
-                )}
-              </>
+              <div className="text-center text-muted-foreground">
+                No chat history found.
+              </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
