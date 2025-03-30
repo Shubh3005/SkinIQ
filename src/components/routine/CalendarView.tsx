@@ -12,7 +12,7 @@ interface CalendarViewProps {
 
 const CalendarView = ({ selectedDate, setSelectedDate, getDateStatus }: CalendarViewProps) => {
   return (
-    <div className="col-span-2">
+    <div className="col-span-2 bg-white rounded-lg p-4 shadow-sm">
       <Calendar
         mode="single"
         selected={selectedDate}
