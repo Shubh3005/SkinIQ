@@ -29,19 +29,30 @@ const SkinAnalyzer = () => {
   } = useSkinAnalysis(user);
 
   // Check connectivity on component mount
+
   useEffect(() => {
     const checkFastAPI = async () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch('http://127.0.0.1:8000/', {
-          method: 'GET',
-          signal: controller.signal
+  
+        // Assuming capturedImage is the base64 string of your image
+        const capturedImageBase64 = capturedImage; // Replace with the actual base64 string
+  
+        // Create the payload as JSON
+        const payload = JSON.stringify({ image: capturedImageBase64 });
+  
+        const response = await fetch('http://127.0.0.1:8000/predict', {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: payload,
+          signal: controller.signal,
         }).catch(() => null);
-        
+  
         clearTimeout(timeoutId);
-        
+  
         if (!response || !response.ok) {
           console.warn('FastAPI is not available, will use fallback API');
           toast.warning("Skin analysis service is running in fallback mode. Some features may be limited.", {
@@ -55,9 +66,10 @@ const SkinAnalyzer = () => {
         console.warn('FastAPI check failed:', error);
       }
     };
-    
+  
     checkFastAPI();
   }, []);
+  
 
   return (
     <div className="min-h-screen w-full flex flex-col">

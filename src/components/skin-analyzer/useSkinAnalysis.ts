@@ -33,7 +33,7 @@ export const useSkinAnalysis = (user: any) => {
       setAnalyzing(false);
     }
   };
-
+  
   const handleAnalysisComplete = (results: any) => {
     setAnalysisResults(results);
     setScanComplete(true);
