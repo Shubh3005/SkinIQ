@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -310,19 +311,18 @@ const RoutineCalendar = () => {
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto bg-card"
             classNames={{
-              day: cn(
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
-                {
-                  "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": (day) => 
-                    getDateStatus(day) === 'morning',
-                  "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": (day) => 
-                    getDateStatus(day) === 'evening',
-                  "bg-green-200 text-green-800 font-medium hover:bg-green-300": (day) => 
-                    getDateStatus(day) === 'both'
-                }
-              ),
-              selected: "bg-primary text-primary-foreground rounded-full",
-              today: "bg-muted text-accent-foreground rounded-full border border-border"
+              day: (day) =>
+                cn(
+                  "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
+                  {
+                    "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": 
+                      getDateStatus(day) === 'morning',
+                    "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": 
+                      getDateStatus(day) === 'evening',
+                    "bg-green-200 text-green-800 font-medium hover:bg-green-300": 
+                      getDateStatus(day) === 'both'
+                  }
+                )
             }}
           />
           <div className="flex justify-center gap-6 mt-4">
