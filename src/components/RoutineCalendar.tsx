@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -271,7 +270,6 @@ const RoutineCalendar = () => {
       
       await fetchRoutineLogs();
       
-      // Recalculate streak after marking routine
       calculateStreak();
       
       toast({
@@ -289,7 +287,6 @@ const RoutineCalendar = () => {
   };
 
   const getStreakColor = () => {
-    // Dynamic gradient based on streak length
     if (streak >= 30) return "from-violet-500 to-purple-700";
     if (streak >= 20) return "from-blue-500 to-violet-500";
     if (streak >= 14) return "from-cyan-500 to-blue-500";
@@ -344,12 +341,10 @@ const RoutineCalendar = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={cn(
-                  "flex items-center gap-1 px-3 py-1.5 rounded-full",
-                  "bg-gradient-to-r", 
-                  getStreakColor()
+                  "flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground"
                 )}>
-                  <Trophy className="h-4 w-4 text-white" />
-                  <span className="font-semibold text-white">{streak} Day Streak</span>
+                  <Trophy className="h-4 w-4" />
+                  <span className="font-semibold">{streak} Day Streak</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -360,8 +355,11 @@ const RoutineCalendar = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className={cn(
+          "flex flex-col gap-4",
+          location.pathname === '/' ? "md:col-span-7" : "md:col-span-12"
+        )}>
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -383,7 +381,7 @@ const RoutineCalendar = () => {
               day_today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
           />
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex justify-center gap-6 mt-2">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
               <span className="text-sm">Both Routines</span>
@@ -399,7 +397,30 @@ const RoutineCalendar = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className={cn(
+          "flex flex-col gap-4",
+          location.pathname === '/' ? "md:col-span-5" : "hidden"
+        )}>
+          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Routine Statistics</h3>
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <BarChart3 className="h-3 w-3" />
+                Stats
+              </Badge>
+            </div>
+            
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={routineStats}>
+                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
           {!isProfilePage && (
             <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
               <h3 className="font-semibold mb-3">{format(selectedDate || new Date(), 'MMMM d, yyyy')}</h3>
@@ -441,81 +462,61 @@ const RoutineCalendar = () => {
               </div>
             </div>
           )}
-
-          {location.pathname === '/' && (
-            <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold">Routine Statistics</h3>
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <BarChart3 className="h-3 w-3" />
-                  Stats
-                </Badge>
-              </div>
-              
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={routineStats}>
-                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Your Achievements</h3>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Trophy className="h-3 w-3" />
-                {achievements.length}
-              </Badge>
-            </div>
-            {achievements.length > 0 ? (
-              <div className={cn(
-                "grid gap-3",
-                isProfilePage ? "grid-cols-3" : "grid-cols-2"
-              )}>
-                {achievements.slice(0, isProfilePage ? 6 : 4).map((achievement) => (
-                  <TooltipProvider key={achievement.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className={cn(
-                          "p-3 rounded-md flex flex-col items-center justify-center text-center transition-colors cursor-default",
-                          isProfilePage 
-                            ? "bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 shadow-md border border-primary/10"
-                            : "bg-card hover:bg-muted/50"
-                        )}>
-                          <div className={cn(
-                            "p-2 rounded-full mb-2",
-                            isProfilePage ? "bg-white/80 shadow-sm" : ""
-                          )}>
-                            {renderAchievementIcon(achievement.icon)}
-                          </div>
-                          <span className={cn(
-                            "font-medium",
-                            isProfilePage ? "text-sm" : "text-xs"  
-                          )}>{achievement.name}</span>
-                          {isProfilePage && (
-                            <span className="text-xs text-muted-foreground mt-1">{achievement.description}</span>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{achievement.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-2">
-                <p className="text-sm">Complete routines to earn achievements</p>
-              </div>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Your Achievements</h3>
+          {!isProfilePage && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Trophy className="h-3 w-3" />
+              {achievements.length}
+            </Badge>
+          )}
+        </div>
+        {achievements.length > 0 ? (
+          <div className={cn(
+            "grid gap-3",
+            isProfilePage ? "grid-cols-3" : "grid-cols-2"
+          )}>
+            {achievements.slice(0, isProfilePage ? 6 : 4).map((achievement) => (
+              <TooltipProvider key={achievement.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "p-3 rounded-md flex flex-col items-center justify-center text-center transition-colors cursor-default",
+                      isProfilePage 
+                        ? "bg-primary/10 hover:bg-primary/20 shadow-md border border-primary/10"
+                        : "bg-card hover:bg-muted/50"
+                    )}>
+                      <div className={cn(
+                        "p-2 rounded-full mb-2",
+                        isProfilePage ? "bg-white/80 shadow-sm" : ""
+                      )}>
+                        {renderAchievementIcon(achievement.icon)}
+                      </div>
+                      <span className={cn(
+                        "font-medium",
+                        isProfilePage ? "text-sm" : "text-xs"  
+                      )}>{achievement.name}</span>
+                      {isProfilePage && (
+                        <span className="text-xs text-muted-foreground mt-1">{achievement.description}</span>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{achievement.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-2">
+            <p className="text-sm">Complete routines to earn achievements</p>
+          </div>
+        )}
       </div>
 
       <Dialog open={showAchievementDialog} onOpenChange={setShowAchievementDialog}>
