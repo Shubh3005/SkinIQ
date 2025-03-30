@@ -199,18 +199,6 @@ const RoutineCalendar = () => {
   const markRoutine = async (type: 'morning' | 'evening') => {
     if (!user || !selectedDate) return;
     
-    const today = new Date();
-    const selectedDay = new Date(selectedDate);
-    
-    if (selectedDay.toDateString() !== today.toDateString()) {
-      toast({
-        title: "Cannot update past days",
-        description: "You can only mark routines for today",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
     
     try {
@@ -373,7 +361,7 @@ const RoutineCalendar = () => {
                   variant={isMorningCompleted ? "default" : "outline"}
                   size="sm"
                   onClick={() => markRoutine('morning')}
-                  disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  disabled={!user}
                   className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}
                 >
                   {isMorningCompleted ? "Completed" : "Mark Complete"}
@@ -390,7 +378,7 @@ const RoutineCalendar = () => {
                   variant={isEveningCompleted ? "default" : "outline"}
                   size="sm"
                   onClick={() => markRoutine('evening')}
-                  disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  disabled={!user}
                   className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
                 >
                   {isEveningCompleted ? "Completed" : "Mark Complete"}
