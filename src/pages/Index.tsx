@@ -133,11 +133,6 @@ const Index = () => {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  {profileData && profileData.skin_type && <div className="px-2 py-1 text-sm text-muted-foreground">
-                      Skin type: {profileData.skin_type}
-                    </div>}
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem className="flex items-center" onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
