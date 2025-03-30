@@ -105,6 +105,17 @@ const Index = () => {
           <Logo size="md" />
           
           {user ? <div className="flex items-center gap-4">
+              <motion.button className={cn("px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all", "bg-primary/10 text-primary hover:bg-primary/20")} onClick={() => navigate('/skincare-ai')} initial={{
+            opacity: 0
+          }} animate={{
+            opacity: 1
+          }} transition={{
+            delay: 1.0
+          }}>
+                <MessageSquare className="h-4 w-4" />
+                SkinCare AI
+              </motion.button>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger className="focus:outline-none">
                   <Avatar className="h-10 w-10 cursor-pointer hover:opacity-90 transition-opacity border-2 border-primary/20">
