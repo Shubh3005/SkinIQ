@@ -1,10 +1,12 @@
 
 import { useState } from 'react';
+import { Calendar } from "@/components/ui/calendar";
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CalendarDays, ClipboardList } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RoutineCalendar from '@/components/RoutineCalendar';
 
@@ -66,7 +68,9 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-6">
-          <RoutineCalendar showControls={false} />
+          <div className="mb-4">
+            <RoutineCalendar />
+          </div>
 
           <div className="space-y-4">
             {loadingHistory ? (
@@ -102,7 +106,7 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
 
                 <h3 className="text-xl font-semibold mb-2">Recent Chats</h3>
                 {chatHistory.length > 0 ? (
-                  <ScrollArea className="h-[300px] pr-4 -mr-4">
+                  <ScrollArea className="h-[250px] pr-4 -mr-4">
                     <div className="space-y-4">
                       {chatHistory.map((chat, index) => (
                         <div key={chat.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -232,7 +233,7 @@ const Index = () => {
           {user ? (
             <div className="space-y-8">
               <div className="grid grid-cols-1">
-                <RoutineCalendar showControls={true} />
+                <RoutineCalendar />
               </div>
             </div>
           ) : (
