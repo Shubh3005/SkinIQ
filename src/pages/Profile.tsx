@@ -7,8 +7,8 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { UserProfileCard } from '@/components/profile/UserProfileCard';
-import { HistoryCard } from '@/components/profile/HistoryCard';
 import { HealthcareInfoCard } from '@/components/profile/HealthcareInfoCard';
+import RoutineCalendar from '@/components/RoutineCalendar';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -97,11 +97,7 @@ const Profile = () => {
             <HealthcareInfoCard />
           </div>
           <div className="flex flex-col">
-            <HistoryCard 
-              scanHistory={scanHistory}
-              chatHistory={chatHistory}
-              loadingHistory={loadingHistory}
-            />
+            <RoutineCalendar />
           </div>
         </div>
 

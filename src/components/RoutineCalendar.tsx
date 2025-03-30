@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -233,7 +234,10 @@ const RoutineCalendar = () => {
         type === 'morning' ? setIsMorningCompleted(true) : setIsEveningCompleted(true);
       }
       
-      fetchRoutineLogs();
+      await fetchRoutineLogs();
+      
+      // Recalculate streak after marking routine
+      calculateStreak();
       
       toast({
         title: "Routine updated",
