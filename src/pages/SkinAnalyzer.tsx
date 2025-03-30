@@ -251,7 +251,7 @@ const SkinAnalyzer = () => {
       setScanComplete(true);
       toast.success("Analysis complete");
 
-      if (user && data) {
+      if (user) {
         try {
           await supabase.functions.invoke('skincare-history', {
             body: {
@@ -293,7 +293,7 @@ const SkinAnalyzer = () => {
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(60);
 
-      // Call our Supabase Edge Function to analyze the skin
+      // Call our Supabase Edge Function to analyze the skin - we're bypassing auth for analysis
       const { data, error } = await supabase.functions.invoke('skincare-history', {
         body: {
           action: 'analyze-skin',
@@ -313,7 +313,7 @@ const SkinAnalyzer = () => {
       setScanComplete(true);
       toast.success("Analysis complete");
 
-      if (user && data) {
+      if (user) {
         try {
           await supabase.functions.invoke('skincare-history', {
             body: {

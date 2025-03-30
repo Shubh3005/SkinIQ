@@ -13,32 +13,22 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Get supabase client
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    {
-      global: {
-        headers: { Authorization: req.headers.get('Authorization')! },
-      },
-    }
-  );
-
-  // Get the current user
-  const {
-    data: { user },
-  } = await supabaseClient.auth.getUser();
-
-  if (!user) {
-    return new Response(
-      JSON.stringify({ error: 'Unauthorized' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-    );
-  }
-
   try {
+    // Parse request body
     const { action, data } = await req.json();
 
+    // Get supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    // For analyze-skin, we'll skip authentication to allow anyone to analyze skin
     if (action === 'analyze-skin') {
       console.log('Processing skin analysis request');
       
@@ -58,6 +48,18 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ success: true, ...analysisResult }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get the current user for all other actions
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       );
     }
 

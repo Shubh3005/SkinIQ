@@ -1,57 +1,64 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, User, Search, Check, RefreshCw, ShoppingBag } from 'lucide-react';
+import { MessageCircle, Send, User, ArrowLeft, Database, Camera, RefreshCw, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Logo from '@/components/Logo';
+import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { parseProductsFromText } from '@/utils/productParser';
-import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface ChatMessage {
-  sender: 'user' | 'ai';
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+type Product = {
+  product_name: string;
+  product_description?: string;
+  product_link?: string;
+};
+
+type ChatHistory = {
+  id: string;
   message: string;
-  timestamp: Date;
-}
+  response: string;
+  created_at: string;
+  recommended_products?: Product[];
+};
 
-interface RoutineStep {
-  step: string;
-  description: string;
-  time?: 'morning' | 'evening' | 'both';
-}
-
-const SkinCareAI = () => {
+const SkinCareAI: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "Hello! I'm your personalized skincare assistant. How can I help you today? You can ask me about recommended routines, products for specific concerns, or general skincare advice."
+    }
+  ]);
+  const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
+  const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [personalized, setPersonalized] = useState<RoutineStep[]>([]);
-  const [products, setProducts] = useState([]);
-  const [skinProfile, setSkinProfile] = useState<{type: string, tone: string} | null>(null);
-  
-  // Initial welcome message
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const [userProfile, setUserProfile] = useState<{skin_type?: string; skin_tone?: string} | null>(null);
+
+  // Fetch user profile information (skin type, skin tone)
   useEffect(() => {
-    setChatHistory([
-      {
-        sender: 'ai',
-        message: 'Hello! I\'m your personal skincare assistant. I can help you with personalized skincare routines, product recommendations, and advice based on your skin type and concerns. What can I help you with today?',
-        timestamp: new Date()
-      }
-    ]);
-    
-    // Fetch user's skin profile
-    const fetchSkinProfile = async () => {
+    const fetchUserProfile = async () => {
       if (!user) return;
       
       try {
@@ -59,175 +66,180 @@ const SkinCareAI = () => {
           .from('profiles')
           .select('skin_type, skin_tone')
           .eq('id', user.id)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('Error fetching skin profile:', error);
-        } else if (data) {
-          setSkinProfile({
-            type: data.skin_type || '',
-            tone: data.skin_tone || ''
-          });
-        }
+          .single();
+          
+        if (error) throw error;
+        setUserProfile(data);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching user profile:', error);
       }
     };
     
-    fetchSkinProfile();
+    fetchUserProfile();
   }, [user]);
-  
-  const handleSendMessage = async () => {
-    if (!message.trim()) return;
-    
-    const userMessage: ChatMessage = {
-      sender: 'user',
-      message: message.trim(),
-      timestamp: new Date()
+
+  // Fetch chat history
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('skincare-history', {
+          body: { 
+            action: 'get-history',
+            data: { type: 'chat' }
+          }
+        });
+        
+        if (error) throw error;
+        if (data.chats) {
+          setChatHistory(data.chats);
+        }
+      } catch (error) {
+        console.error('Error fetching chat history:', error);
+        toast.error('Failed to load chat history');
+      } finally {
+        setIsLoading(false);
+      }
     };
     
-    setChatHistory(prev => [...prev, userMessage]);
+    fetchChatHistory();
+  }, [user]);
+
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    if (isSending) return;
+    
+    setIsSending(true);
+    const userMessage = message.trim();
     setMessage('');
-    setIsLoading(true);
+    
+    // Add user message to chat
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     
     try {
-      // Call to Supabase Edge Function - fixed to pass correct parameters
+      // Show a temporary loading message
+      setMessages(prev => [...prev, { role: 'assistant', content: '...' }]);
+      
+      // Call the skincare-ai edge function
       const { data, error } = await supabase.functions.invoke('skincare-ai', {
-        body: {
-          message: userMessage.message,
-          userSkinType: skinProfile?.type || '',
-          userSkinTone: skinProfile?.tone || '',
-          history: chatHistory.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.message
-          }))
+        body: { 
+          message: userMessage,
+          skin_type: userProfile?.skin_type || '',
+          skin_tone: userProfile?.skin_tone || '' 
         }
       });
       
-      if (error) {
-        console.error('Error from skincare-ai function:', error);
-        toast.error('Failed to get a response');
-        return;
+      if (error) throw error;
+      
+      // Remove the loading message
+      setMessages(prev => prev.slice(0, -1));
+      
+      // Add the actual assistant response
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      
+      // Check if we have product recommendations
+      if (data.products && data.products.length > 0) {
+        setSuggestedProducts(data.products);
       }
       
-      const aiResponse: ChatMessage = {
-        sender: 'ai',
-        message: data.message || 'Sorry, I couldn\'t process your request',
-        timestamp: new Date()
-      };
-      
-      setChatHistory(prev => [...prev, aiResponse]);
-      
-      // Parse and store recommended products
-      const parsedProducts = parseProductsFromText(aiResponse.message);
-      if (parsedProducts.length > 0) {
-        setProducts(parsedProducts);
-        
-        // Save recommended products to database
-        if (user) {
-          try {
-            await supabase.from('recommended_products').insert(
-              parsedProducts.map(product => ({
-                user_id: user.id,
-                product_name: product.product_name,
-                product_description: product.product_description || null,
-                product_link: product.product_link || null
-              }))
-            );
-          } catch (err) {
-            console.error('Error saving products:', err);
-          }
-        }
-      }
-      
-      // Try to extract routine steps
-      if (aiResponse.message.toLowerCase().includes('routine') || 
-          aiResponse.message.toLowerCase().includes('steps') ||
-          message.toLowerCase().includes('routine')) {
-        const steps = extractRoutineSteps(aiResponse.message);
-        if (steps.length > 0) {
-          setPersonalized(steps);
-        }
-      }
-      
-      // Store chat history in database
+      // Save chat to history
       if (user) {
-        try {
-          await supabase.from('chat_history').insert({
-            user_id: user.id,
-            message: userMessage.message,
-            response: aiResponse.message
-          });
-        } catch (err) {
-          console.error('Error storing chat history:', err);
-        }
+        await supabase.functions.invoke('skincare-history', {
+          body: { 
+            action: 'save-chat',
+            data: {
+              message: userMessage,
+              response: data.response,
+              products: data.products
+            }
+          }
+        });
       }
       
     } catch (error) {
-      console.error('Error processing message:', error);
-      toast.error('Something went wrong');
+      console.error('Error sending message:', error);
+      // Remove the loading message
+      setMessages(prev => prev.slice(0, -1));
+      // Add error message
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error. Please try again later.' 
+      }]);
+      toast.error('Failed to get a response');
     } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const extractRoutineSteps = (text: string): RoutineStep[] => {
-    try {
-      const steps: RoutineStep[] = [];
-      const lines = text.split('\n');
-      
-      let currentSection: 'morning' | 'evening' | 'both' = 'both';
-      
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        
-        if (trimmedLine.toLowerCase().includes('morning routine') || 
-            trimmedLine.toLowerCase().includes('am routine')) {
-          currentSection = 'morning';
-          continue;
-        }
-        
-        if (trimmedLine.toLowerCase().includes('evening routine') || 
-            trimmedLine.toLowerCase().includes('night routine') || 
-            trimmedLine.toLowerCase().includes('pm routine')) {
-          currentSection = 'evening';
-          continue;
-        }
-        
-        // Look for numbered or bulleted step
-        const stepMatch = trimmedLine.match(/^(\d+\.|[\*\-•])\s*([^:]+)(?::\s*(.+))?$/);
-        
-        if (stepMatch) {
-          const step = stepMatch[2].trim();
-          const description = stepMatch[3] ? stepMatch[3].trim() : '';
-          
-          steps.push({
-            step,
-            description,
-            time: currentSection
-          });
-        }
-      }
-      
-      return steps;
-    } catch (error) {
-      console.error('Error extracting routine steps:', error);
-      return [];
+      setIsSending(false);
+      // After sending, focus back on the input
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Send message when Enter is pressed (but not with Shift)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const loadChatHistory = (chat: ChatHistory) => {
+    setMessages([
+      {
+        role: 'assistant',
+        content: "Hello! I'm your personalized skincare assistant. How can I help you today?"
+      },
+      { role: 'user', content: chat.message },
+      { role: 'assistant', content: chat.response }
+    ]);
+    
+    // Load any products from the chat
+    if (chat.recommended_products && chat.recommended_products.length > 0) {
+      setSuggestedProducts(chat.recommended_products);
+    } else {
+      setSuggestedProducts([]);
+    }
+  };
+
+  const startNewChat = () => {
+    setMessages([{
+      role: 'assistant',
+      content: "Hello! I'm your personalized skincare assistant. How can I help you today? You can ask me about recommended routines, products for specific concerns, or general skincare advice."
+    }]);
+    setSuggestedProducts([]);
+    setMessage('');
+    inputRef.current?.focus();
+  };
+
   return (
-    <div className="min-h-screen w-full flex flex-col">
+    <div className="min-h-screen w-full">
       <AnimatedBackground />
       
-      <div className="w-full max-w-screen-xl px-6 py-8 mx-auto flex-1 flex flex-col">
+      <div className="w-full max-w-screen-xl px-6 py-8 mx-auto">
         <motion.div 
-          className="flex justify-between items-center mb-8"
+          className="flex justify-between items-center mb-6"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Logo size="md" />
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate('/')}
+              className="mr-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Logo size="md" />
+          </div>
           
           <div className="flex items-center gap-4">
             <Button 
@@ -246,217 +258,190 @@ const SkinCareAI = () => {
               className="flex items-center gap-2"
               onClick={() => navigate('/skin-analyzer')}
             >
-              <Search className="h-4 w-4" />
-              Skin Analyzer
+              <Camera className="h-4 w-4" />
+              Skin Scanner
             </Button>
           </div>
         </motion.div>
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8 text-center"
-        >
-          <h1 className="text-3xl font-bold">
-            <span className="text-primary">SkinCare</span> AI Assistant
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Get personalized skincare advice and product recommendations
-          </p>
-        </motion.div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 max-w-screen-xl w-full flex-1">
-          {/* First column (chat) - takes 3/5 of the space */}
-          <div className="md:col-span-3 flex flex-col">
-            <Card className="flex-1 border-2 border-primary/20 shadow-lg shadow-primary/10 flex flex-col h-[600px]">
-              <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  SkinCare AI Chat
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar on larger screens - Chat History */}
+          <motion.div 
+            className="hidden lg:block"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="h-[80vh] border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex justify-between items-center">
+                  <span>Chat History</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={startNewChat}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
-                <CardDescription>
-                  Ask questions about skincare routines and get personalized advice
-                </CardDescription>
+                <CardDescription>Your recent conversations</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {chatHistory.map((msg, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              <ScrollArea className="h-[calc(80vh-5rem)] p-4">
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : chatHistory.length > 0 ? (
+                  <div className="space-y-2">
+                    {chatHistory.map((chat) => (
+                      <div 
+                        key={chat.id} 
+                        className="p-3 rounded-md bg-card hover:bg-muted cursor-pointer border border-border"
+                        onClick={() => loadChatHistory(chat)}
                       >
-                        <div
-                          className={`max-w-[80%] rounded-lg p-3 ${
-                            msg.sender === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-line">{msg.message}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                        <div className="font-medium truncate">{chat.message}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(chat.created_at).toLocaleDateString()}
                         </div>
                       </div>
                     ))}
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="max-w-[80%] rounded-lg p-3 bg-muted">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-150"></div>
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-300"></div>
-                            <span className="text-xs">Thinking...</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </ScrollArea>
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Textarea
-                      placeholder="Ask about skincare routines, products, or specific concerns..."
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      className="min-h-[60px]"
-                      disabled={isLoading}
-                    />
-                    <Button
-                      className="h-full aspect-square"
-                      onClick={handleSendMessage}
-                      disabled={!message.trim() || isLoading}
-                    >
-                      {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </Button>
+                ) : (
+                  <div className="text-center text-muted-foreground p-4">
+                    No chat history yet
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-muted-foreground"
-                      onClick={() => setMessage("What's a good routine for my skin type?")}
-                      disabled={isLoading}
-                    >
-                      Routine for my skin type
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-muted-foreground"
-                      onClick={() => setMessage("Recommend products for dry sensitive skin")}
-                      disabled={isLoading}
-                    >
-                      Product recommendations
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
+                )}
+              </ScrollArea>
             </Card>
-          </div>
+          </motion.div>
           
-          {/* Second column (results) - takes 2/5 of the space */}
-          <div className="md:col-span-2 flex flex-col gap-6">
-            <Tabs defaultValue="routine" className="flex-1">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="routine" className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  <span>Personalized Routine</span>
-                </TabsTrigger>
-                <TabsTrigger value="products" className="flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4" />
-                  <span>Products</span>
-                </TabsTrigger>
+          {/* Main Content - Chat and Products */}
+          <motion.div 
+            className="lg:col-span-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Tabs defaultValue="chat" className="h-[80vh]">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="chat">Chat</TabsTrigger>
+                <TabsTrigger value="products">Recommended Products</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="routine" className="mt-4 h-[550px]">
-                <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10 h-full">
-                  <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
-                    <CardTitle className="flex items-center gap-2">
-                      <Check className="h-5 w-5 text-primary" />
-                      Personalized Routine
+              <TabsContent value="chat" className="h-full">
+                <Card className="h-full border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden flex flex-col">
+                  <CardHeader className="py-3">
+                    <CardTitle className="flex items-center">
+                      <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+                      SkinCare AI Assistant
                     </CardTitle>
-                    <CardDescription>
-                      Customized skincare steps based on your profile and concerns
-                    </CardDescription>
+                    {userProfile?.skin_type && userProfile?.skin_tone && (
+                      <CardDescription>
+                        Personalized for {userProfile.skin_type} skin with {userProfile.skin_tone} tone
+                      </CardDescription>
+                    )}
                   </CardHeader>
-                  <CardContent className="pt-6">
-                    <ScrollArea className="h-[400px] pr-4">
-                      {personalized.length > 0 ? (
-                        <div className="space-y-6">
-                          {['morning', 'evening', 'both'].map(time => {
-                            const timeSteps = personalized.filter(step => 
-                              step.time === time || (time === 'both' && !step.time)
-                            );
+                  
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-4 mb-4">
+                      {messages.map((msg, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className="flex items-start max-w-[80%]">
+                            {msg.role === 'assistant' && (
+                              <Avatar className="h-8 w-8 mr-2 mt-1">
+                                <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
+                              </Avatar>
+                            )}
                             
-                            if (timeSteps.length === 0) return null;
-                            
-                            return (
-                              <div key={time} className="space-y-4">
-                                <h3 className="font-semibold text-primary capitalize">
-                                  {time === 'both' ? 'Daily' : `${time.charAt(0).toUpperCase() + time.slice(1)}`} Routine
-                                </h3>
-                                <div className="space-y-3">
-                                  {timeSteps.map((step, index) => (
-                                    <div 
-                                      key={index} 
-                                      className="p-3 rounded-lg border border-primary/10 bg-muted/50"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <div className="bg-primary/20 text-primary h-6 w-6 rounded-full flex items-center justify-center text-sm font-medium">
-                                          {index + 1}
-                                        </div>
-                                        <h4 className="font-medium">{step.step}</h4>
-                                      </div>
-                                      {step.description && (
-                                        <p className="mt-2 text-sm text-muted-foreground pl-8">
-                                          {step.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                  ))}
+                            <div
+                              className={`rounded-lg px-4 py-2 ${
+                                msg.role === 'user'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
+                              }`}
+                            >
+                              {msg.content === '...' ? (
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
+                                  <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
+                                  <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
-                              </div>
-                            );
-                          })}
+                              ) : (
+                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                              )}
+                            </div>
+                            
+                            {msg.role === 'user' && (
+                              <Avatar className="h-8 w-8 ml-2 mt-1">
+                                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                                <AvatarFallback>{user?.user_metadata?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                              </Avatar>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                          <p className="text-muted-foreground mb-2">
-                            Ask the AI about a skincare routine for your skin type to see personalized steps.
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMessage("Can you suggest a simple skincare routine for me?")}
-                            disabled={isLoading}
-                          >
-                            Get Routine Suggestions
-                          </Button>
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </CardContent>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                  
+                  <div className="p-4 border-t">
+                    <div className="flex items-end gap-2">
+                      <Textarea
+                        ref={inputRef}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Type your skincare question here..."
+                        className="min-h-[60px] resize-none"
+                        disabled={isSending}
+                      />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        className="h-10 w-10"
+                        disabled={isSending || !message.trim()}
+                        onClick={handleSendMessage}
+                      >
+                        {isSending ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               </TabsContent>
               
-              <TabsContent value="products" className="mt-4 h-[550px]">
-                <RecommendedProducts 
-                  products={products}
-                  title="Recommended Products"
-                  description="Products tailored to your skin needs"
-                />
+              <TabsContent value="products" className="h-full">
+                <Card className="h-full border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
+                  <CardHeader>
+                    <CardTitle>Recommended Products</CardTitle>
+                    <CardDescription>
+                      Products suggested based on your skincare needs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {suggestedProducts.length > 0 ? (
+                      <RecommendedProducts products={suggestedProducts} />
+                    ) : (
+                      <div className="text-center py-10">
+                        <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium">No Products Yet</h3>
+                        <p className="text-muted-foreground">
+                          Chat with the AI assistant to get personalized product recommendations
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
