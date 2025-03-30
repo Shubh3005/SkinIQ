@@ -287,6 +287,14 @@ const RoutineCalendar = () => {
     return 'none';
   };
 
+  const getDayClass = (date: Date): string => {
+    const status = getDateStatus(date);
+    if (status === 'morning') return "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300";
+    if (status === 'evening') return "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300";
+    if (status === 'both') return "bg-green-200 text-green-800 font-medium hover:bg-green-300";
+    return "";
+  };
+
   return (
     <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
       <div className="flex justify-between items-center">
@@ -318,18 +326,18 @@ const RoutineCalendar = () => {
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto bg-card"
+            modifiers={{
+              morning: (date) => getDateStatus(date) === 'morning',
+              evening: (date) => getDateStatus(date) === 'evening',
+              both: (date) => getDateStatus(date) === 'both'
+            }}
+            modifiersClassNames={{
+              morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
+              evening: "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300",
+              both: "bg-green-200 text-green-800 font-medium hover:bg-green-300"
+            }}
             classNames={{
-              day: (day) => cn(
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
-                {
-                  "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": 
-                    getDateStatus(day) === 'morning',
-                  "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": 
-                    getDateStatus(day) === 'evening',
-                  "bg-green-200 text-green-800 font-medium hover:bg-green-300": 
-                    getDateStatus(day) === 'both'
-                }
-              ),
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
               day_selected: "bg-primary text-primary-foreground rounded-full",
               day_today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
