@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Award, CheckCircle } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+
 interface RoutineLogType {
   id: string;
   user_id: string;
@@ -18,6 +15,7 @@ interface RoutineLogType {
   evening_completed: boolean;
   created_at: string;
 }
+
 interface AchievementType {
   id: string;
   name: string;
@@ -26,6 +24,7 @@ interface AchievementType {
   user_id: string;
   created_at: string;
 }
+
 const RoutineCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [routineLogs, setRoutineLogs] = useState<RoutineLogType[]>([]);
@@ -35,22 +34,22 @@ const RoutineCalendar = () => {
   const [isEveningCompleted, setIsEveningCompleted] = useState(false);
   const [showAchievementDialog, setShowAchievementDialog] = useState(false);
   const [newAchievement, setNewAchievement] = useState<AchievementType | null>(null);
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   useEffect(() => {
     if (!user) return;
     fetchRoutineLogs();
     fetchAchievements();
   }, [user, selectedDate]);
+
   useEffect(() => {
     if (routineLogs.length > 0) {
       calculateStreak();
     }
   }, [routineLogs]);
+
   useEffect(() => {
     if (!selectedDate || !routineLogs.length) return;
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -58,6 +57,7 @@ const RoutineCalendar = () => {
     setIsMorningCompleted(todayLog?.morning_completed || false);
     setIsEveningCompleted(todayLog?.evening_completed || false);
   }, [selectedDate, routineLogs]);
+
   const fetchRoutineLogs = async () => {
     if (!user) return;
     try {
@@ -78,6 +78,7 @@ const RoutineCalendar = () => {
       });
     }
   };
+
   const fetchAchievements = async () => {
     if (!user) return;
     try {
@@ -93,6 +94,7 @@ const RoutineCalendar = () => {
       console.error('Error fetching achievements:', error);
     }
   };
+
   const calculateStreak = async () => {
     const sortedLogs = [...routineLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let currentStreak = 0;
@@ -121,6 +123,7 @@ const RoutineCalendar = () => {
     setStreak(currentStreak);
     checkStreakAchievements(currentStreak);
   };
+
   const checkStreakAchievements = async (currentStreak: number) => {
     if (!user) return;
     const streakMilestones = [{
@@ -182,6 +185,7 @@ const RoutineCalendar = () => {
       }
     }
   };
+
   const markRoutine = async (type: 'morning' | 'evening') => {
     if (!user || !selectedDate) return;
     const today = new Date();
@@ -228,20 +232,7 @@ const RoutineCalendar = () => {
       });
     }
   };
-  const renderAchievementIcon = (icon: string) => {
-    switch (icon) {
-      case 'check':
-        return <CheckCircle className="h-6 w-6 text-green-500" />;
-      case 'star':
-        return <Star className="h-6 w-6 text-yellow-500" />;
-      case 'award':
-        return <Award className="h-6 w-6 text-blue-500" />;
-      case 'trophy':
-        return <Trophy className="h-6 w-6 text-purple-500" />;
-      default:
-        return <Award className="h-6 w-6 text-primary" />;
-    }
-  };
+
   const getDateStatus = (date: Date) => {
     const formattedDate = format(date, 'yyyy-MM-dd');
     const log = routineLogs.find(log => log.date === formattedDate);
@@ -251,122 +242,45 @@ const RoutineCalendar = () => {
     if (log.evening_completed) return 'evening';
     return 'none';
   };
-  const getDayClass = (date: Date): string => {
-    const status = getDateStatus(date);
-    if (status === 'morning') return "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300";
-    if (status === 'evening') return "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300";
-    if (status === 'both') return "bg-green-200 text-green-800 font-medium hover:bg-green-300";
-    return "";
-  };
-  return <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold mb-1 mx-0 px-[230px]">Your Skincare Routine</h2>
-          <p className="text-muted-foreground px-[200px]">Track your daily morning and evening routines</p>
+
+  return (
+    <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
+      <div className="flex justify-center">
+        <Calendar 
+          mode="single" 
+          selected={selectedDate} 
+          onSelect={setSelectedDate} 
+          modifiers={{
+            morning: date => getDateStatus(date) === 'morning',
+            evening: date => getDateStatus(date) === 'evening',
+            both: date => getDateStatus(date) === 'both'
+          }}
+          modifiersClassNames={{
+            morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
+            evening: "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300",
+            both: "bg-green-200 text-green-800 font-medium hover:bg-green-300"
+          }}
+          classNames={{
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
+            day_selected: "bg-primary text-primary-foreground rounded-full",
+            day_today: "bg-muted text-accent-foreground rounded-full border border-border"
+          }}
+          className="rounded-md border pointer-events-auto bg-card"
+        />
+      </div>
+      
+      <div className="flex justify-center gap-6 mt-4">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
+          <span className="text-sm">Both Routines</span>
         </div>
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full">
-                  <Trophy className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">{streak} Day Streak</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Keep your streak going by completing both routines daily!</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="w-4 h-4 rounded-full bg-amber-300 border border-amber-500"></div>
+          <span className="text-sm">Morning Only</span>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-2">
-          <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} modifiers={{
-          morning: date => getDateStatus(date) === 'morning',
-          evening: date => getDateStatus(date) === 'evening',
-          both: date => getDateStatus(date) === 'both'
-        }} modifiersClassNames={{
-          morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
-          evening: "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300",
-          both: "bg-green-200 text-green-800 font-medium hover:bg-green-300"
-        }} classNames={{
-          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
-          day_selected: "bg-primary text-primary-foreground rounded-full",
-          day_today: "bg-muted text-accent-foreground rounded-full border border-border"
-        }} className="rounded-md border pointer-events-auto bg-card px-[230px]" />
-          <div className="flex justify-center gap-6 mt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
-              <span className="text-sm">Both Routines</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-amber-300 border border-amber-500"></div>
-              <span className="text-sm">Morning Only</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-300 border border-blue-500"></div>
-              <span className="text-sm">Evening Only</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-            <h3 className="font-semibold mb-3">{format(selectedDate || new Date(), 'MMMM d, yyyy')}</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-amber-100 p-2 rounded-full px-0">
-                    <Star className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <span>Morning Routine</span>
-                </div>
-                <Button variant={isMorningCompleted ? "default" : "outline"} size="sm" onClick={() => markRoutine('morning')} disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()} className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}>
-                  {isMorningCompleted ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-blue-100 p-2 rounded-full px-0">
-                    <Star className="h-4 w-4 text-blue-600 px-0" />
-                  </div>
-                  <span>Evening Routine</span>
-                </div>
-                <Button variant={isEveningCompleted ? "default" : "outline"} size="sm" onClick={() => markRoutine('evening')} disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()} className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}>
-                  {isEveningCompleted ? "Completed" : "Mark Complete"}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Your Achievements</h3>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Trophy className="h-3 w-3" />
-                {achievements.length}
-              </Badge>
-            </div>
-            {achievements.length > 0 ? <div className="grid grid-cols-2 gap-2">
-                {achievements.slice(0, 4).map(achievement => <TooltipProvider key={achievement.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="bg-card p-2 rounded-md flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-default">
-                          {renderAchievementIcon(achievement.icon)}
-                          <span className="text-xs mt-1 font-medium">{achievement.name}</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{achievement.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>)}
-              </div> : <div className="text-center text-muted-foreground py-2">
-                <p className="text-sm">Complete routines to earn achievements</p>
-              </div>}
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-blue-300 border border-blue-500"></div>
+          <span className="text-sm">Evening Only</span>
         </div>
       </div>
 
@@ -380,7 +294,7 @@ const RoutineCalendar = () => {
           </DialogHeader>
           {newAchievement && <div className="flex flex-col items-center py-6">
               <div className="mb-4 bg-primary/10 p-6 rounded-full">
-                {renderAchievementIcon(newAchievement.icon)}
+                {/* Render achievement icon here */}
               </div>
               <h3 className="text-xl font-bold mb-2">{newAchievement.name}</h3>
               <p className="text-center text-muted-foreground">{newAchievement.description}</p>
@@ -392,6 +306,8 @@ const RoutineCalendar = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
+
 export default RoutineCalendar;
