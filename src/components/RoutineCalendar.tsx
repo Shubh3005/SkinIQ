@@ -261,8 +261,8 @@ const RoutineCalendar = () => {
   return <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold mb-1 mx-0 px-[180px]">Your Skincare Routine</h2>
-          <p className="text-muted-foreground px-[120px]">Track your daily morning and evening routines</p>
+          <h2 className="text-2xl font-bold mb-1 mx-0 px-[200px]">Your Skincare Routine</h2>
+          <p className="text-muted-foreground px-[160px]">Track your daily morning and evening routines</p>
         </div>
         <div className="flex items-center gap-2">
           <TooltipProvider>
@@ -295,7 +295,7 @@ const RoutineCalendar = () => {
           day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
           day_selected: "bg-primary text-primary-foreground rounded-full",
           day_today: "bg-muted text-accent-foreground rounded-full border border-border"
-        }} className="rounded-md border pointer-events-auto bg-card px-[165px]" />
+        }} className="rounded-md border pointer-events-auto bg-card px-[200px]" />
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
