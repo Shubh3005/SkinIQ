@@ -1,20 +1,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, RefreshCw, Scan, Image as ImageIcon } from 'lucide-react';
+import { Send, CheckCheck, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import AnimatedBackground from '@/components/AnimatedBackground';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
-import { Card } from '@/components/ui/card';
 import { parseProductsFromText } from '@/utils/productParser';
+import AnimatedBackground from '@/components/AnimatedBackground';
+import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
+import { useNavigate } from 'react-router-dom';
 
 interface Message {
   role: string;
@@ -27,7 +26,7 @@ const SkinCareAI = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'system',
-      content: "Welcome to SkinCare AI! I can help you with skincare recommendations, answer questions about skin conditions, and suggest personalized routines based on your skin type. How can I assist you today?",
+      content: "Hello! I'm your personal skincare assistant. I can help you with personalized skincare routines, product recommendations, and advice based on your skin type and concerns. What can I help you with today?",
       timestamp: new Date(),
     },
   ]);
@@ -36,7 +35,9 @@ const SkinCareAI = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState("chat");
 
   useEffect(() => {
     fetchSkinType();
@@ -63,7 +64,6 @@ const SkinCareAI = () => {
       
       if (data && data.skin_type) {
         setSkinType(data.skin_type);
-        console.log('Loaded skin type:', data.skin_type);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -134,8 +134,41 @@ const SkinCareAI = () => {
       
       // Parse products from the response
       const parsedProducts = parseProductsFromText(responseText);
+      console.log("Parsed products:", parsedProducts);
       if (parsedProducts.length > 0) {
         setRecommendedProducts(parsedProducts);
+        
+        // Save products to database
+        if (user) {
+          try {
+            const { data: chatData } = await supabase
+              .from('chat_history')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('message', input)
+              .order('created_at', { ascending: false })
+              .limit(1);
+              
+            if (chatData && chatData.length > 0) {
+              const chatId = chatData[0].id;
+              
+              // Save recommended products
+              for (const product of parsedProducts) {
+                await supabase
+                  .from('recommended_products')
+                  .insert({
+                    user_id: user.id,
+                    chat_id: chatId,
+                    product_name: product.product_name,
+                    product_description: product.product_description || '',
+                    product_link: product.product_link || ''
+                  });
+              }
+            }
+          } catch (error) {
+            console.error('Error saving recommended products:', error);
+          }
+        }
       }
       
       // Update the chat history with the AI response
@@ -183,180 +216,191 @@ const SkinCareAI = () => {
     }
   };
 
+  const handleQuickPrompt = (prompt: string) => {
+    setInput(prompt);
+  };
+
+  const getRoutineSuggestions = () => {
+    const prompt = `Based on my ${skinType || ''} skin type, can you recommend a complete morning and evening skincare routine with specific product recommendations?`;
+    setInput(prompt);
+    setActiveTab("chat");
+  };
+
   return (
-    <div className="flex flex-col min-h-screen w-full overflow-hidden relative">
+    <div className="min-h-screen w-full pb-10 relative">
       <AnimatedBackground />
       
-      <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 py-6 flex flex-col">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex justify-between items-center mb-6"
-        >
-          <div>
-            <h1 className="text-2xl font-bold">
-              Skin<span className="text-primary">Care</span> AI
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Your personal skincare assistant
-            </p>
-          </div>
-          
-          {skinType && (
-            <Badge variant="outline" className="px-3 py-1 text-xs bg-primary/10">
-              Skin Type: {skinType.charAt(0).toUpperCase() + skinType.slice(1)}
-            </Badge>
-          )}
-        </motion.div>
-        
-        <div className="flex-1 flex flex-col lg:flex-row gap-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex-1 flex flex-col bg-card rounded-xl shadow-lg overflow-hidden border border-border/50"
-          >
-            <div className="p-4 border-b flex justify-between items-center bg-card">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8 bg-primary/20">
-                  <AvatarFallback><Bot className="h-4 w-4 text-primary" /></AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium text-sm">SkinCare Assistant</h3>
-                  <p className="text-xs text-muted-foreground">AI-powered skin specialist</p>
+      <div className="max-w-6xl mx-auto px-4 pt-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold">
+            <span className="text-amber-700">SkinCare</span>{" "}
+            <span className="text-slate-800">AI Assistant</span>
+          </h1>
+          <p className="text-slate-600 mt-2">
+            Get personalized skincare advice and product recommendations
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-5 gap-6">
+          <div className="md:col-span-3">
+            <Card className="overflow-hidden border-amber-100 shadow-md">
+              <div className="p-4 border-b border-amber-100 bg-amber-50/50">
+                <div className="flex items-center">
+                  <MessageSquare className="h-5 w-5 text-amber-700 mr-2" />
+                  <h2 className="text-lg font-semibold text-slate-800">SkinCare AI Chat</h2>
                 </div>
+                <p className="text-sm text-slate-600 mt-1">
+                  Ask questions about skincare routines and get personalized advice
+                </p>
               </div>
               
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setMessages([{
-                  role: 'system',
-                  content: "Welcome to SkinCare AI! I can help you with skincare recommendations, answer questions about skin conditions, and suggest personalized routines based on your skin type. How can I assist you today?",
-                  timestamp: new Date(),
-                }])}
-                className="text-xs"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Reset
-              </Button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+              <div className="bg-white h-96 overflow-y-auto p-4 space-y-4">
+                {messages.map((message, index) => (
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 
-                      ${message.role === 'user' 
-                        ? 'bg-primary text-primary-foreground ml-4' 
-                        : message.role === 'system' 
-                          ? 'bg-muted border border-border/50' 
-                          : 'bg-card border border-border/50'
-                      }`}
+                    key={index}
+                    className={`${
+                      message.role === 'user' ? 'ml-auto max-w-[80%]' : 'mr-auto max-w-[80%]'
+                    }`}
                   >
-                    {message.role !== 'user' ? (
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => <p className="my-1">{children}</p>,
-                          h1: ({ children }) => <h1 className="text-xl font-bold my-2">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-lg font-bold my-2">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-md font-bold my-2">{children}</h3>,
-                          ul: ({ children }) => <ul className="list-disc pl-5 my-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal pl-5 my-1">{children}</ol>,
-                          li: ({ children }) => <li className="my-0.5">{children}</li>,
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                    ) : (
-                      <p>{message.content}</p>
-                    )}
-                    {message.timestamp && (
-                      <div className={`text-[10px] mt-1 text-right ${message.role === 'user' ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    )}
+                    <div
+                      className={`rounded-2xl p-3 ${
+                        message.role === 'user'
+                          ? 'bg-amber-100 text-slate-800 ml-auto'
+                          : message.role === 'system'
+                            ? 'bg-amber-50 border border-amber-100 text-slate-700'
+                            : 'bg-white border border-amber-100 text-slate-800'
+                      }`}
+                    >
+                      {message.role !== 'user' ? (
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="my-1">{children}</p>,
+                            h1: ({ children }) => <h1 className="text-xl font-bold my-2">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-lg font-bold my-2">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-md font-bold my-2">{children}</h3>,
+                            ul: ({ children }) => <ul className="list-disc pl-5 my-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-5 my-1">{children}</ol>,
+                            li: ({ children }) => <li className="my-0.5">{children}</li>,
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <p>{message.content}</p>
+                      )}
+                      {message.timestamp && (
+                        <div className="text-[10px] mt-1 text-right text-slate-500">
+                          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </motion.div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
-              <div className="relative">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about skincare routines, products, or concerns..."
-                  className="pr-20 min-h-[60px] max-h-[120px] resize-none"
-                  disabled={isLoading}
-                />
-                <Button 
-                  type="submit" 
-                  size="sm" 
-                  disabled={isLoading || !input.trim()} 
-                  className="absolute right-2 bottom-2"
-                >
-                  {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+                ))}
+                <div ref={messagesEndRef} />
               </div>
               
-              <div className="flex justify-between mt-2">
-                <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    <Scan className="h-3 w-3 mr-1" />
-                    Analyze Skin
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    <ImageIcon className="h-3 w-3 mr-1" />
-                    Upload Image
+              <form onSubmit={handleSubmit} className="p-4 border-t border-amber-100">
+                <div className="relative">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask about skincare routines, products, or specific concerns..."
+                    className="min-h-[60px] pr-16 resize-none border-amber-200 focus-visible:ring-amber-500"
+                  />
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    disabled={isLoading || !input.trim()} 
+                    className="absolute right-2 bottom-2 bg-amber-600 hover:bg-amber-700"
+                  >
+                    {isLoading ? (
+                      <span className="animate-spin">⟳</span>
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 
-                <p className="text-xs text-muted-foreground pr-2">Powered by AI</p>
-              </div>
-            </form>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="lg:w-80 flex flex-col gap-4"
-          >
-            <Card className="p-4 border border-border/50">
-              <h3 className="font-medium text-sm mb-2">Example Questions</h3>
-              <div className="space-y-2">
-                {[
-                  "What's a good routine for my skin type?",
-                  "How can I treat acne scars?",
-                  "Recommend products for sensitive skin",
-                  "What ingredients should I avoid?",
-                ].map((suggestion, i) => (
-                  <Button
-                    key={i}
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start text-xs h-auto py-2"
-                    onClick={() => setInput(suggestion)}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs border-amber-200 text-amber-800"
+                    onClick={() => handleQuickPrompt("Routine for my skin type")}
                   >
-                    {suggestion}
+                    Routine for my skin type
                   </Button>
-                ))}
-              </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs border-amber-200 text-amber-800"
+                    onClick={() => handleQuickPrompt("Product recommendations")}
+                  >
+                    Product recommendations
+                  </Button>
+                </div>
+              </form>
             </Card>
-            
-            <RecommendedProducts products={recommendedProducts} />
-          </motion.div>
+          </div>
+          
+          <div className="md:col-span-2">
+            <Tabs defaultValue="routine" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-amber-50 border border-amber-100">
+                <TabsTrigger 
+                  value="routine" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-amber-800"
+                >
+                  <CheckCheck className="h-4 w-4 mr-1" />
+                  Personalized Routine
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="products" 
+                  className="data-[state=active]:bg-white data-[state=active]:text-amber-800"
+                >
+                  Products
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="routine" className="mt-4">
+                <Card className="border-amber-100 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <CheckCheck className="h-5 w-5 text-amber-600 mr-2" />
+                      <h3 className="text-lg font-semibold text-slate-800">Personalized Routine</h3>
+                    </div>
+                    <p className="text-slate-600 mb-4">
+                      Customized skincare steps based on your profile and concerns
+                    </p>
+                    
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <p className="text-slate-700 mb-6">
+                        Ask the AI about a skincare routine for your 
+                        {skinType ? ` ${skinType}` : ''} skin type to see personalized steps.
+                      </p>
+                      <Button 
+                        onClick={getRoutineSuggestions}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        Get Routine Suggestions
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="products" className="mt-4">
+                <RecommendedProducts 
+                  products={recommendedProducts} 
+                  title="Recommended Products"
+                  description="Products that may help with your skin concerns"
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

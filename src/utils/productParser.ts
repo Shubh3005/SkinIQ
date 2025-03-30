@@ -1,7 +1,6 @@
 
 /**
  * Parses product information from AI response text
- * This is a JavaScript implementation inspired by the Python code provided
  */
 export interface Product {
   product_name: string;
@@ -56,19 +55,59 @@ export const parseProductsFromText = (text: string): Product[] => {
       }
     }
     
+    // Pattern 4: Markdown format
+    const markdownProductRegex = /\*\*([^*]+)\*\*(?:\s*-\s*|\s*:\s*)([^(]*)(?:\((https?:\/\/[^)]+)\))?/g;
+    
+    while ((match = markdownProductRegex.exec(text)) !== null) {
+      const productName = match[1].trim();
+      if (!products.some(p => p.product_name === productName)) {
+        products.push({
+          product_name: productName,
+          product_description: match[2] ? match[2].trim() : '',
+          product_link: match[3] || undefined
+        });
+      }
+    }
+    
     // If no products found with the regexes, try a more general approach
     if (products.length === 0) {
+      // Split by lines to find product-like entries
       const lines = text.split('\n');
+      
+      // Try to find lines that have product indicators
       for (const line of lines) {
-        if (line.includes('amazon.com') || line.includes('product')) {
-          const linkMatch = line.match(/(https?:\/\/[^\s]+)/);
-          const nameMatch = line.match(/\*\*([^*]+)\*\*|"([^"]+)"|'([^']+)'|([A-Z][a-zA-Z\s]+)/);
+        // Skip short lines and lines without product indicators
+        if (line.length < 10 || (!line.includes('product') && !line.includes('recommend') && !line.match(/\b[A-Z][a-zA-Z\s]+\b/))) {
+          continue;
+        }
+        
+        // Look for product names in quotes, bold formatting, or capitalized words
+        const linkMatch = line.match(/(https?:\/\/[^\s]+)/);
+        const nameMatch = line.match(/\*\*([^*]+)\*\*|"([^"]+)"|'([^']+)'|([A-Z][a-zA-Z\s&]+\b[^,.:])/);
+        
+        if (nameMatch) {
+          const name = nameMatch[1] || nameMatch[2] || nameMatch[3] || nameMatch[4];
           
-          if (nameMatch) {
-            const name = nameMatch[1] || nameMatch[2] || nameMatch[3] || nameMatch[4];
+          // Skip if it's not likely a product name or if we already have this product
+          if (name && name.length > 3 && !products.some(p => p.product_name === name.trim())) {
+            // Try to extract a description
+            let description = '';
+            if (line.includes(':')) {
+              const parts = line.split(':');
+              if (parts.length > 1) {
+                description = parts[1].trim();
+              }
+            } else if (line.includes('-')) {
+              const parts = line.split('-');
+              if (parts.length > 1) {
+                description = parts[1].trim();
+              }
+            }
+            
             products.push({
               product_name: name.trim(),
-              product_link: linkMatch ? linkMatch[1] : undefined
+              product_link: linkMatch ? linkMatch[1] : undefined,
+              product_description: description || undefined
             });
           }
         }
@@ -84,13 +123,10 @@ export const parseProductsFromText = (text: string): Product[] => {
       }
     }
     
+    console.log("Parsed products:", products);
     return products;
   } catch (error) {
     console.error('Error parsing products:', error);
     return [];
   }
 };
-
-// Example usage:
-// const aiResponse = "Here are some recommended products:\n1. CeraVe Hydrating Cleanser: Gentle non-foaming formula (https://amazon.com/cerave)\n2. The Ordinary Niacinamide 10%: Helps reduce sebum production\n3. Neutrogena Hydro Boost Gel Cream: Lightweight hydration for oily skin";
-// const products = parseProductsFromText(aiResponse);
