@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -12,17 +13,11 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RoutineCalendar from '@/components/RoutineCalendar';
-import RoutineTypeGraph from '@/components/RoutineTypeGraph';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [routineTypeData, setRoutineTypeData] = useState([
-    { name: "Morning Only", count: 22, color: "#f59e0b" },
-    { name: "Evening Only", count: 18, color: "#3b82f6" },
-    { name: "Both Routines", count: 15, color: "#22c55e" }
-  ]);
   
   const {
     user,
@@ -237,13 +232,8 @@ const Index = () => {
           
           {user ? (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <RoutineCalendar />
-                </div>
-                <div>
-                  <RoutineTypeGraph data={routineTypeData} />
-                </div>
+              <div className="grid grid-cols-1">
+                <RoutineCalendar />
               </div>
             </div>
           ) : (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -166,27 +167,41 @@ const RoutineCalendar = () => {
     
     for (const milestone of streakMilestones) {
       if (currentStreak >= milestone.days) {
+        // Check if user already has this achievement
         const hasAchievement = achievements.some(a => a.name === milestone.name);
         
         if (!hasAchievement) {
           try {
-            const { data, error } = await supabase
+            // First check if there's already an achievement in the database with this name
+            const { data: existingAchievement, error: checkError } = await supabase
               .from('achievements')
-              .insert({
-                user_id: user.id,
-                name: milestone.name,
-                description: milestone.description,
-                icon: milestone.icon
-              })
-              .select()
-              .single();
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('name', milestone.name)
+              .maybeSingle();
+              
+            if (checkError) throw checkError;
             
-            if (error) throw error;
-            
-            if (data) {
-              setNewAchievement(data);
-              setShowAchievementDialog(true);
-              setAchievements(prev => [...prev, data]);
+            // Only create if achievement doesn't exist
+            if (!existingAchievement) {
+              const { data, error } = await supabase
+                .from('achievements')
+                .insert({
+                  user_id: user.id,
+                  name: milestone.name,
+                  description: milestone.description,
+                  icon: milestone.icon
+                })
+                .select()
+                .single();
+              
+              if (error) throw error;
+              
+              if (data) {
+                setNewAchievement(data);
+                setShowAchievementDialog(true);
+                setAchievements(prev => [...prev, data]);
+              }
             }
           } catch (error) {
             console.error('Error creating achievement:', error);
