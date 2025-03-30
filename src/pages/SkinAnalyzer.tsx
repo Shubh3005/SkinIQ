@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -373,9 +372,64 @@ const SkinAnalyzer = () => {
     }
   };
 
-  const handleImageSelected = (file: File) => {
+  const handleImageSelected = async (file: File, predictionResult?: any) => {
     console.log('Image selected:', file);
-    toast.success('Image uploaded successfully!');
+    
+    if (predictionResult) {
+      console.log('Prediction result:', predictionResult);
+      
+      // Process the prediction result
+      try {
+        // If you are simulating analysis for demonstration purposes, 
+        // you can use the prediction results here or set them directly
+        setAnalyzing(true);
+        await simulateAnalysis();
+        
+        // Use predictionResult data to set analysis results
+        // This is an example - adjust according to your API response structure
+        const processedResults = {
+          skinType: predictionResult.skin_type || 'unknown',
+          skinIssues: predictionResult.skin_issues || 'None detected',
+          sunDamage: predictionResult.sun_damage || 'None detected',
+          uniqueFeature: predictionResult.unique_feature || 'None detected',
+          skinTone: predictionResult.skin_tone || 'Not analyzed'
+        };
+        
+        // Save to history if user is logged in
+        if (user) {
+          try {
+            const imageData = URL.createObjectURL(file);
+            await supabase.functions.invoke('skincare-history', {
+              body: {
+                action: 'save-scan',
+                data: {
+                  skinType: processedResults.skinType,
+                  skinIssues: processedResults.skinIssues,
+                  sunDamage: processedResults.sunDamage,
+                  uniqueFeature: processedResults.uniqueFeature,
+                  skinTone: processedResults.skinTone,
+                  scanImage: imageData
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error saving scan to history:', error);
+          }
+        }
+        
+        setAnalysisResults(processedResults);
+        setScanComplete(true);
+        toast.success("Analysis complete");
+      } catch (error) {
+        console.error('Error analyzing image:', error);
+        toast.error("Analysis failed. Please try again.");
+      } finally {
+        setAnalyzing(false);
+      }
+    } else {
+      // Fallback to simulated analysis if no prediction result is available
+      toast.success('Image uploaded successfully!');
+    }
   };
 
   return (

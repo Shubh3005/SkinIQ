@@ -7,15 +7,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from 'sonner';
 
 interface ImageUploaderProps {
-  onImageSelected?: (file: File) => void;
+  onImageSelected?: (file: File, predictionResult?: any) => void;
 }
 
 export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
       return;
     }
@@ -37,9 +38,45 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
     setSelectedFile(file);
     setSelectedImage(URL.createObjectURL(file));
     
-    if (onImageSelected) {
-      onImageSelected(file);
+    // Upload to prediction API
+    if (file) {
+      try {
+        setIsUploading(true);
+        const predictionResult = await uploadAndPredict(file);
+        
+        if (onImageSelected) {
+          onImageSelected(file, predictionResult);
+        }
+        
+        toast.success('Image analysis complete!');
+      } catch (error) {
+        console.error('Error analyzing image:', error);
+        toast.error('Failed to analyze image. Please try again.');
+        
+        // Still provide the file to parent component even if prediction fails
+        if (onImageSelected) {
+          onImageSelected(file);
+        }
+      } finally {
+        setIsUploading(false);
+      }
     }
+  };
+
+  const uploadAndPredict = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('https://236d-104-39-9-82.ngrok-free.app/predict', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
   };
 
   const removeSelectedImage = () => {
@@ -92,9 +129,19 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
                 <Button
                   onClick={triggerFileInput}
                   className="w-full mt-4"
+                  disabled={isUploading}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Image
+                  {isUploading ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Image
+                    </>
+                  )}
                 </Button>
               </div>
             ) : (
@@ -110,6 +157,7 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
                     size="icon"
                     className="absolute top-2 right-2"
                     onClick={removeSelectedImage}
+                    disabled={isUploading}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -128,9 +176,19 @@ export const ImageUploader = ({ onImageSelected }: ImageUploaderProps) => {
                     variant="outline"
                     size="sm"
                     onClick={triggerFileInput}
+                    disabled={isUploading}
                   >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Change Image
+                    {isUploading ? (
+                      <>
+                        <span className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Change Image
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
