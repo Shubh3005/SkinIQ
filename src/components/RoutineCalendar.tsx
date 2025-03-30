@@ -282,7 +282,7 @@ const RoutineCalendar = ({
         day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
         day_selected: "bg-primary text-primary-foreground rounded-full",
         day_today: "bg-muted text-accent-foreground rounded-full border border-border"
-      }} className="rounded-md border pointer-events-auto bg-card px-[150px]" />
+      }} className="rounded-md border pointer-events-auto bg-card px-[130px]" />
         <div className="flex justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
