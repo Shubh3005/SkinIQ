@@ -17,13 +17,14 @@ const CalendarView = ({ selectedDate, setSelectedDate, getDateStatus }: Calendar
         mode="single"
         selected={selectedDate}
         onSelect={setSelectedDate}
-        className="rounded-md border pointer-events-auto bg-card"
+        className="rounded-md border pointer-events-auto"
         modifiers={{
           routine: (date) => getDateStatus(date) !== 'none'
         }}
         modifiersClassNames={{
           routine: ""
         }}
+        defaultMonth={selectedDate}
         components={{
           Day: ({ date, ...props }) => {
             const status = getDateStatus(date);
@@ -31,7 +32,7 @@ const CalendarView = ({ selectedDate, setSelectedDate, getDateStatus }: Calendar
               <button
                 {...props}
                 className={cn(
-                  (props as any)?.className ?? '',
+                  props.className,
                   {
                     "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": status === 'morning',
                     "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": status === 'evening',
