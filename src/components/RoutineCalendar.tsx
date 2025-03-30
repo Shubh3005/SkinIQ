@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -64,6 +65,7 @@ const RoutineCalendar = () => {
   const { toast } = useToast();
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     if (!user) return;
@@ -201,6 +203,7 @@ const RoutineCalendar = () => {
     
     for (const milestone of streakMilestones) {
       if (currentStreak >= milestone.days) {
+        // Check if the user already has this achievement
         const hasAchievement = achievements.some(a => a.name === milestone.name);
         
         if (!hasAchievement) {
@@ -356,15 +359,12 @@ const RoutineCalendar = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <div className={cn(
-          "flex flex-col gap-4",
-          location.pathname === '/' ? "md:col-span-7" : "md:col-span-12"
-        )}>
+        <div className="md:col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col items-center">
           <Calendar
             mode="single"
             selected={selectedDate}
             onSelect={setSelectedDate}
-            className="rounded-md border pointer-events-auto bg-card"
+            className="rounded-md border pointer-events-auto bg-card mx-auto"
             modifiers={{
               morning: (date) => getDateStatus(date) === 'morning',
               evening: (date) => getDateStatus(date) === 'evening',
@@ -397,11 +397,8 @@ const RoutineCalendar = () => {
           </div>
         </div>
 
-        <div className={cn(
-          "flex flex-col gap-4",
-          location.pathname === '/' ? "md:col-span-5" : "hidden"
-        )}>
-          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+        <div className="md:col-span-12 lg:col-span-5 xl:col-span-4">
+          <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border mb-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Routine Statistics</h3>
               <Badge variant="secondary" className="flex items-center gap-1">
@@ -465,59 +462,39 @@ const RoutineCalendar = () => {
         </div>
       </div>
 
-      <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold">Your Achievements</h3>
-          {!isProfilePage && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Trophy className="h-3 w-3" />
-              {achievements.length}
-            </Badge>
+      {isProfilePage && (
+        <div className="bg-muted/40 backdrop-blur-sm rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">Your Achievements</h3>
+          </div>
+          {achievements.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {achievements.slice(0, 6).map((achievement) => (
+                <TooltipProvider key={achievement.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="p-3 rounded-md flex flex-col items-center justify-center text-center transition-colors cursor-default bg-primary/10 hover:bg-primary/20 shadow-md border border-primary/10">
+                        <div className="p-2 rounded-full mb-2 bg-white/80 shadow-sm">
+                          {renderAchievementIcon(achievement.icon)}
+                        </div>
+                        <span className="text-sm font-medium">{achievement.name}</span>
+                        <span className="text-xs text-muted-foreground mt-1">{achievement.description}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{achievement.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-2">
+              <p className="text-sm">Complete routines to earn achievements</p>
+            </div>
           )}
         </div>
-        {achievements.length > 0 ? (
-          <div className={cn(
-            "grid gap-3",
-            isProfilePage ? "grid-cols-3" : "grid-cols-2"
-          )}>
-            {achievements.slice(0, isProfilePage ? 6 : 4).map((achievement) => (
-              <TooltipProvider key={achievement.id}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className={cn(
-                      "p-3 rounded-md flex flex-col items-center justify-center text-center transition-colors cursor-default",
-                      isProfilePage 
-                        ? "bg-primary/10 hover:bg-primary/20 shadow-md border border-primary/10"
-                        : "bg-card hover:bg-muted/50"
-                    )}>
-                      <div className={cn(
-                        "p-2 rounded-full mb-2",
-                        isProfilePage ? "bg-white/80 shadow-sm" : ""
-                      )}>
-                        {renderAchievementIcon(achievement.icon)}
-                      </div>
-                      <span className={cn(
-                        "font-medium",
-                        isProfilePage ? "text-sm" : "text-xs"  
-                      )}>{achievement.name}</span>
-                      {isProfilePage && (
-                        <span className="text-xs text-muted-foreground mt-1">{achievement.description}</span>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{achievement.description}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-2">
-            <p className="text-sm">Complete routines to earn achievements</p>
-          </div>
-        )}
-      </div>
+      )}
 
       <Dialog open={showAchievementDialog} onOpenChange={setShowAchievementDialog}>
         <DialogContent className="sm:max-w-md">
