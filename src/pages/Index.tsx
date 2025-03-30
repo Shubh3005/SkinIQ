@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RoutineCalendar from '@/components/RoutineCalendar';
 import StatsBarGraph from '@/components/StatsBarGraph';
+import RoutineTypeGraph from '@/components/RoutineTypeGraph';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -23,6 +24,12 @@ const Index = () => {
     { date: 'Week 2', morning: 6, evening: 5, both: 4 },
     { date: 'Week 3', morning: 4, evening: 7, both: 3 },
     { date: 'Week 4', morning: 7, evening: 6, both: 5 }
+  ]);
+  
+  const [routineTypeData, setRoutineTypeData] = useState([
+    { name: "Morning Only", count: 22, color: "#f59e0b" },
+    { name: "Evening Only", count: 18, color: "#3b82f6" },
+    { name: "Both Routines", count: 15, color: "#22c55e" }
   ]);
   
   const {
@@ -243,7 +250,14 @@ const Index = () => {
           
           {user ? (
             <div className="space-y-8">
-              <RoutineCalendar />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <RoutineCalendar />
+                </div>
+                <div>
+                  <RoutineTypeGraph data={routineTypeData} />
+                </div>
+              </div>
               <StatsBarGraph data={routineStats} title="Routine Completion Stats" description="Weekly statistics of completed skincare routines" />
             </div>
           ) : (
