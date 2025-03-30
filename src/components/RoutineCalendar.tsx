@@ -335,7 +335,7 @@ const RoutineCalendar = () => {
                   <button
                     {...props}
                     className={cn(
-                      props.className || '',
+                      props?.className ?? '',
                       {
                         "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": status === 'morning',
                         "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": status === 'evening',
