@@ -26,26 +26,27 @@ interface AchievementDialogProps {
   newAchievement: AchievementType | null;
 }
 
+// Move the function outside the component so it can be exported separately
+export const renderAchievementIcon = (icon: string) => {
+  switch (icon) {
+    case 'check':
+      return <CheckCircle className="h-6 w-6 text-green-500" />;
+    case 'star':
+      return <Star className="h-6 w-6 text-yellow-500" />;
+    case 'award':
+      return <Award className="h-6 w-6 text-blue-500" />;
+    case 'trophy':
+      return <Trophy className="h-6 w-6 text-purple-500" />;
+    default:
+      return <Award className="h-6 w-6 text-primary" />;
+  }
+};
+
 const AchievementDialog = ({ 
   showAchievementDialog, 
   setShowAchievementDialog, 
   newAchievement 
 }: AchievementDialogProps) => {
-  const renderAchievementIcon = (icon: string) => {
-    switch (icon) {
-      case 'check':
-        return <CheckCircle className="h-6 w-6 text-green-500" />;
-      case 'star':
-        return <Star className="h-6 w-6 text-yellow-500" />;
-      case 'award':
-        return <Award className="h-6 w-6 text-blue-500" />;
-      case 'trophy':
-        return <Trophy className="h-6 w-6 text-purple-500" />;
-      default:
-        return <Award className="h-6 w-6 text-primary" />;
-    }
-  };
-
   return (
     <Dialog open={showAchievementDialog} onOpenChange={setShowAchievementDialog}>
       <DialogContent className="sm:max-w-md">
@@ -74,5 +75,4 @@ const AchievementDialog = ({
   );
 };
 
-export { renderAchievementIcon };
 export default AchievementDialog;
