@@ -1,12 +1,12 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Scan, X, Zap, Loader2 } from 'lucide-react';
+import { Camera, Scan, X, Zap, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from '@/integrations/supabase/client';
 
 interface CameraScannerProps {
   onAnalysisComplete: (results: any) => void;
@@ -24,6 +24,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
   const [analysisStage, setAnalysisStage] = useState('');
   const [scanComplete, setScanComplete] = useState(false);
   const [overlayContext, setOverlayContext] = useState<CanvasRenderingContext2D | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (cameraActive && overlayCanvasRef.current) {
@@ -163,8 +164,9 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
         setCameraActive(true);
         toast.success("Camera activated successfully");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accessing camera:', error);
+      setError(`Could not access camera: ${error.message}`);
       toast.error("Could not access camera. Please check permissions.");
     }
   };
@@ -187,6 +189,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
     try {
       setAnalyzing(true);
       setAnalysisProgress(0);
+      setError(null);
 
       const canvas = canvasRef.current;
       const video = videoRef.current;
@@ -211,59 +214,12 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(50);
 
-      // Call the external API - using fetch with error handling
-      const response = await fetch('http://127.0.0.1:8000/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: imageBase64
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      setAnalysisProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Set the results from the API
-      onAnalysisComplete(data);
-      setScanComplete(true);
-      toast.success("Analysis complete");
-
-      if (user) {
-        try {
-          await supabase.functions.invoke('skincare-history', {
-            body: {
-              action: 'save-scan',
-              data: {
-                ...data,
-                scanImage: imageBase64
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Error saving scan to history:', error);
-        }
-      }
-    } catch (error: any) {
-      console.error('Error analyzing image:', error);
-      toast.error(`Analysis failed: ${error.message || 'Connection to analysis server failed'}. Please try again.`);
-      
-      // Try alternative API if the main one fails
       try {
-        setAnalysisStage('Trying alternative analysis method');
+        // Call the FastAPI endpoint with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
-        // Get the canvas data again
-        const canvas = canvasRef.current;
-        const imageBase64 = canvas?.toDataURL('image/jpeg', 0.8);
-        
-        const mockResponse = await fetch('https://tbeyfafaieibqspwiwlc.supabase.co/functions/v1/predict-mock', {
+        const response = await fetch('http://127.0.0.1:8000/predict', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -271,21 +227,103 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
           body: JSON.stringify({
             image: imageBase64
           }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
-        if (!mockResponse.ok) {
-          throw new Error(`Mock API error: ${mockResponse.status}`);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
 
-        const mockData = await mockResponse.json();
+        const data = await response.json();
         
         setAnalysisProgress(100);
-        onAnalysisComplete(mockData);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Set the results from the API
+        onAnalysisComplete(data);
         setScanComplete(true);
-        toast.success("Analysis complete (using fallback service)");
-      } catch (fallbackError) {
-        console.error('Fallback analysis also failed:', fallbackError);
+        toast.success("Analysis complete");
+
+        // Save to Supabase if user is logged in
+        if (user) {
+          try {
+            const { error: saveError } = await supabase.from('skin_scan_history').insert({
+              user_id: user.id,
+              skin_type: data.skinType,
+              skin_issues: data.skinIssues,
+              sun_damage: data.sunDamage,
+              unique_feature: data.uniqueFeature,
+              skin_tone: data.skinTone,
+              scan_image: imageBase64,
+              disease: data.disease || "No disease detected",
+              acneSeverity: data.acneSeverity || "None"
+            });
+            
+            if (saveError) {
+              console.error('Error saving scan to history:', saveError);
+            }
+          } catch (error: any) {
+            console.error('Error saving scan to history:', error);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error analyzing image with FastAPI:', error);
+        setError(`FastAPI analysis failed: ${error.message}`);
+        toast.error(`Analysis failed: ${error.message || 'Connection to analysis server failed'}. Trying fallback...`);
+        
+        // Try fallback Supabase function if FastAPI fails
+        try {
+          setAnalysisStage('Trying alternative analysis method');
+          setAnalysisProgress(60);
+          
+          const { data: mockData, error: mockError } = await supabase.functions.invoke('predict-mock', {
+            body: {
+              image: imageBase64
+            }
+          });
+
+          if (mockError) {
+            throw new Error(`Fallback API error: ${mockError.message}`);
+          }
+
+          setAnalysisProgress(100);
+          onAnalysisComplete(mockData);
+          setScanComplete(true);
+          toast.success("Analysis complete (using fallback service)");
+          
+          // Still save to Supabase
+          if (user) {
+            try {
+              const { error: saveError } = await supabase.from('skin_scan_history').insert({
+                user_id: user.id,
+                skin_type: mockData.skinType,
+                skin_issues: mockData.skinIssues,
+                sun_damage: mockData.sunDamage,
+                unique_feature: mockData.uniqueFeature,
+                skin_tone: mockData.skinTone,
+                scan_image: imageBase64,
+                disease: mockData.disease || "No disease detected",
+                acneSeverity: mockData.acneSeverity || "None" 
+              });
+              
+              if (saveError) {
+                console.error('Error saving fallback scan to history:', saveError);
+              }
+            } catch (saveError: any) {
+              console.error('Error saving fallback scan to history:', saveError);
+            }
+          }
+        } catch (fallbackError: any) {
+          console.error('Fallback analysis also failed:', fallbackError);
+          setError(`All analysis methods failed: ${fallbackError.message}`);
+          toast.error("All analysis methods failed. Please try again later.");
+        }
       }
+    } catch (e: any) {
+      console.error('General error in camera capture:', e);
+      setError(`Camera capture error: ${e.message}`);
+      toast.error(`Camera error: ${e.message}`);
     } finally {
       setAnalyzing(false);
     }
@@ -320,6 +358,19 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
               !cameraActive && "hidden"
             )}
           />
+          
+          {/* Error message */}
+          {error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="bg-card p-4 rounded-lg shadow-lg max-w-md text-center">
+                <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+                <p className="text-sm font-medium mb-2">{error}</p>
+                <Button size="sm" onClick={() => setError(null)}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
           
           {/* Analysis progress */}
           <AnimatePresence>
@@ -370,7 +421,3 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
     </Card>
   );
 };
-
-// Add supabase import
-import { supabase } from '@/integrations/supabase/client';
-
