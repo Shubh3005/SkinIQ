@@ -110,28 +110,47 @@ const SkinCareAI = () => {
         return;
       }
       
+      let aiResponseText = data.message || 'Sorry, I couldn\'t process your request';
+      
+      // Remove markdown symbols: headings (#), bold/italic markers, bullet points, etc.
+      aiResponseText = aiResponseText
+        .replace(/#{1,6}\s+/g, '') // Remove heading markers
+        .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
+        .replace(/\*(.+?)\*/g, '$1') // Remove italic
+        .replace(/\-\-(.+?)\-\-/g, '$1') // Remove strike-through
+        .replace(/^[\-\*]\s+/gm, '') // Remove bullet points
+        .replace(/^\d+\.\s+/gm, '') // Remove numbered list markers
+        .replace(/`(.+?)`/g, '$1'); // Remove code ticks
+      
       const aiResponse: ChatMessage = {
         sender: 'ai',
-        message: data.message || 'Sorry, I couldn\'t process your request',
+        message: aiResponseText,
         timestamp: new Date()
       };
       
       setChatHistory(prev => [...prev, aiResponse]);
       
       // Parse and store recommended products
-      const parsedProducts = parseProductsFromText(aiResponse.message);
+      const parsedProducts = parseProductsFromText(aiResponseText);
       if (parsedProducts.length > 0) {
-        setProducts(parsedProducts);
+        // Simplify product objects to just have product_name
+        const simplifiedProducts = parsedProducts.map(product => ({
+          product_name: product.product_name,
+          product_description: '',
+          product_link: ''
+        }));
+        
+        setProducts(simplifiedProducts);
         
         // Save recommended products to database
         if (user) {
           try {
             await supabase.from('recommended_products').insert(
-              parsedProducts.map(product => ({
+              simplifiedProducts.map(product => ({
                 user_id: user.id,
                 product_name: product.product_name,
-                product_description: product.product_description || null,
-                product_link: product.product_link || null
+                product_description: null,
+                product_link: null
               }))
             );
           } catch (err) {
@@ -141,10 +160,10 @@ const SkinCareAI = () => {
       }
       
       // Try to extract routine steps
-      if (aiResponse.message.toLowerCase().includes('routine') || 
-          aiResponse.message.toLowerCase().includes('steps') ||
+      if (aiResponseText.toLowerCase().includes('routine') || 
+          aiResponseText.toLowerCase().includes('steps') ||
           message.toLowerCase().includes('routine')) {
-        const steps = extractRoutineSteps(aiResponse.message);
+        const steps = extractRoutineSteps(aiResponseText);
         if (steps.length > 0) {
           setPersonalized(steps);
         }
@@ -156,7 +175,7 @@ const SkinCareAI = () => {
           await supabase.from('chat_history').insert({
             user_id: user.id,
             message: userMessage.message,
-            response: aiResponse.message
+            response: aiResponseText
           });
         } catch (err) {
           console.error('Error storing chat history:', err);
@@ -449,11 +468,40 @@ const SkinCareAI = () => {
               </TabsContent>
               
               <TabsContent value="products" className="mt-4 h-[550px]">
-                <RecommendedProducts 
-                  products={products}
-                  title="Recommended Products"
-                  description="Products tailored to your skin needs"
-                />
+                {products && products.length > 0 ? (
+                  <RecommendedProducts 
+                    products={products}
+                    title="Recommended Products"
+                    description="Products tailored to your skin needs"
+                  />
+                ) : (
+                  <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10 h-full">
+                    <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+                      <CardTitle className="flex items-center gap-2">
+                        <ShoppingBag className="h-5 w-5 text-primary" />
+                        Recommended Products
+                      </CardTitle>
+                      <CardDescription>
+                        No products recommended yet
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 flex items-center justify-center h-[400px]">
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-4">
+                          Ask the AI for product recommendations based on your skin type and concerns
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setMessage("Can you recommend some products for my skin type?")}
+                          disabled={isLoading}
+                        >
+                          Get Product Recommendations
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           </div>

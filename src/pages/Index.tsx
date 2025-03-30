@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -12,11 +13,19 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RoutineCalendar from '@/components/RoutineCalendar';
+import StatsBarGraph from '@/components/StatsBarGraph';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [routineStats, setRoutineStats] = useState([
+    { date: 'Week 1', morning: 5, evening: 4, both: 3 },
+    { date: 'Week 2', morning: 6, evening: 5, both: 4 },
+    { date: 'Week 3', morning: 4, evening: 7, both: 3 },
+    { date: 'Week 4', morning: 7, evening: 6, both: 5 }
+  ]);
+  
   const {
     user,
     signOut
@@ -54,6 +63,9 @@ const Index = () => {
       }
     };
     fetchProfileData();
+    
+    // Here we would fetch routine stats data from the database
+    // For now, we're using the mock data defined in state
   }, [user]);
   
   const handleSignOut = async () => {
@@ -234,7 +246,10 @@ const Index = () => {
           </div>
           
           {user ? (
-            <RoutineCalendar />
+            <>
+              <RoutineCalendar />
+              <StatsBarGraph data={routineStats} title="Routine Completion Stats" description="Weekly statistics of completed skincare routines" />
+            </>
           ) : (
             <div className="text-center bg-card p-10 rounded-xl shadow-md">
               <h3 className="text-xl font-semibold mb-4">Sign in to track your routines</h3>
