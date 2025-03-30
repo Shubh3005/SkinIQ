@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -279,6 +278,19 @@ const RoutineCalendar = () => {
     return 'none';
   };
 
+  const calendarDayClassName = (day: Date) => {
+    const status = getDateStatus(day);
+    
+    return cn(
+      "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
+      {
+        "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": status === 'morning',
+        "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": status === 'evening',
+        "bg-green-200 text-green-800 font-medium hover:bg-green-300": status === 'both'
+      }
+    );
+  };
+
   return (
     <div className="w-full flex flex-col gap-6 bg-card rounded-xl shadow-md p-6">
       <div className="flex justify-between items-center">
@@ -310,19 +322,29 @@ const RoutineCalendar = () => {
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto bg-card"
-            classNames={{
-              day: (day) =>
-                cn(
-                  "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
-                  {
-                    "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": 
-                      getDateStatus(day) === 'morning',
-                    "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": 
-                      getDateStatus(day) === 'evening',
-                    "bg-green-200 text-green-800 font-medium hover:bg-green-300": 
-                      getDateStatus(day) === 'both'
-                  }
-                )
+            modifiers={{
+              routine: (date) => getDateStatus(date) !== 'none'
+            }}
+            modifiersClassNames={{
+              routine: ""
+            }}
+            components={{
+              Day: ({ date, ...props }) => {
+                const status = getDateStatus(date);
+                return (
+                  <button
+                    {...props}
+                    className={cn(
+                      props.className,
+                      {
+                        "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": status === 'morning',
+                        "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": status === 'evening',
+                        "bg-green-200 text-green-800 font-medium hover:bg-green-300": status === 'both'
+                      }
+                    )}
+                  />
+                );
+              }
             }}
           />
           <div className="flex justify-center gap-6 mt-4">
