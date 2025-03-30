@@ -113,7 +113,7 @@ const RoutineCalendar = () => {
     }
   };
 
-  const calculateStreak = () => {
+  const calculateStreak = async () => {
     const sortedLogs = [...routineLogs].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -276,12 +276,6 @@ const RoutineCalendar = () => {
     }
   };
 
-  const hasRoutineForDate = (date: Date) => {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const log = routineLogs.find(log => log.date === formattedDate);
-    return !!log;
-  };
-
   const getDateStatus = (date: Date) => {
     const formattedDate = format(date, 'yyyy-MM-dd');
     const log = routineLogs.find(log => log.date === formattedDate);
@@ -326,29 +320,31 @@ const RoutineCalendar = () => {
             className="rounded-md border pointer-events-auto bg-card"
             classNames={{
               day: cn(
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
                 {
-                  "bg-green-500/20 text-green-700 font-medium": (day) => 
-                    getDateStatus(day) === 'both',
-                  "bg-yellow-500/20 text-yellow-700": (day) => 
+                  "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300": (day) => 
                     getDateStatus(day) === 'morning',
-                  "bg-blue-500/20 text-blue-700": (day) => 
-                    getDateStatus(day) === 'evening'
+                  "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300": (day) => 
+                    getDateStatus(day) === 'evening',
+                  "bg-green-200 text-green-800 font-medium hover:bg-green-300": (day) => 
+                    getDateStatus(day) === 'both'
                 }
-              )
+              ),
+              selected: "bg-primary text-primary-foreground rounded-full",
+              today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
           />
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
+              <div className="w-4 h-4 rounded-full bg-green-300 border border-green-500"></div>
               <span className="text-sm">Both Routines</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+              <div className="w-4 h-4 rounded-full bg-amber-300 border border-amber-500"></div>
               <span className="text-sm">Morning Only</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500/50"></div>
+              <div className="w-4 h-4 rounded-full bg-blue-300 border border-blue-500"></div>
               <span className="text-sm">Evening Only</span>
             </div>
           </div>
@@ -360,8 +356,8 @@ const RoutineCalendar = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="bg-yellow-100 p-2 rounded-full">
-                    <Star className="h-4 w-4 text-yellow-600" />
+                  <div className="bg-amber-100 p-2 rounded-full">
+                    <Star className="h-4 w-4 text-amber-600" />
                   </div>
                   <span>Morning Routine</span>
                 </div>
@@ -370,6 +366,7 @@ const RoutineCalendar = () => {
                   size="sm"
                   onClick={() => markRoutine('morning')}
                   disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  className={isMorningCompleted ? "bg-amber-500 hover:bg-amber-600" : ""}
                 >
                   {isMorningCompleted ? "Completed" : "Mark Complete"}
                 </Button>
@@ -386,6 +383,7 @@ const RoutineCalendar = () => {
                   size="sm"
                   onClick={() => markRoutine('evening')}
                   disabled={!user || selectedDate?.toDateString() !== new Date().toDateString()}
+                  className={isEveningCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
                 >
                   {isEveningCompleted ? "Completed" : "Mark Complete"}
                 </Button>

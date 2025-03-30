@@ -1,26 +1,25 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
-interface LogoProps {
+type LogoProps = {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-}
+};
 
-const Logo = ({ size = 'md', className }: LogoProps) => {
-  const sizeClasses = {
+const Logo: React.FC<LogoProps> = ({ size = 'md', className = '' }) => {
+  const sizes = {
     sm: 'h-8 w-8',
     md: 'h-12 w-12',
     lg: 'h-16 w-16',
   };
 
   return (
-    <Link to="/" className={cn("block", className)}>
+    <Link to="/home" className={`block ${className}`}>
       <img
-        src="/lovable-uploads/f566f7be-209c-4029-9f3d-257aad2e8ca6.png"
+        src="/lovable-uploads/4b10187f-97dd-41a0-9b7e-037157f1b07a.png"
         alt="SkinIQ Logo"
-        className={cn(sizeClasses[size], "transition-transform hover:scale-105")}
+        className={`${sizes[size]} transition-transform hover:scale-105`}
       />
     </Link>
   );
