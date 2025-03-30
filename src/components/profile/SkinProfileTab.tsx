@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SkinProfileFormData {
   skin_type: string;
@@ -62,12 +61,8 @@ export const SkinProfileTab = () => {
           toast.error('Failed to load skin profile data');
         } else if (data) {
           // Safely access properties with optional chaining
-          if (data.skin_type) {
-            form.setValue('skin_type', data.skin_type);
-          }
-          if (data.skin_tone) {
-            form.setValue('skin_tone', data.skin_tone);
-          }
+          form.setValue('skin_type', data.skin_type || '');
+          form.setValue('skin_tone', data.skin_tone || '');
         }
       } catch (error) {
         console.error('Error:', error);
@@ -126,7 +121,6 @@ export const SkinProfileTab = () => {
                     disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -157,7 +151,6 @@ export const SkinProfileTab = () => {
                     disabled={isLoading}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

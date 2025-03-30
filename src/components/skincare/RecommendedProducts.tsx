@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Link2, ExternalLink } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { 
   Card, 
@@ -10,6 +10,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface Product {
   product_name: string;
@@ -29,6 +30,10 @@ export const RecommendedProducts = ({
   description = "Products that may help with your skin concerns"
 }: RecommendedProductsProps) => {
   if (!products.length) return null;
+
+  const isAmazonLink = (link: string) => {
+    return link && link.includes('amazon.com');
+  };
 
   return (
     <motion.div
@@ -60,12 +65,51 @@ export const RecommendedProducts = ({
                     </Badge>
                     <h3 className="font-medium">{product.product_name}</h3>
                   </div>
+                  
+                  {product.product_link && (
+                    <a 
+                      href={product.product_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80"
+                    >
+                      {isAmazonLink(product.product_link) ? (
+                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                          Amazon
+                          <ExternalLink className="h-3 w-3" />
+                        </Badge>
+                      ) : (
+                        <Link2 className="h-4 w-4" />
+                      )}
+                    </a>
+                  )}
                 </div>
                 
                 {product.product_description && (
                   <p className="text-sm text-muted-foreground mt-1">
                     {product.product_description}
                   </p>
+                )}
+                
+                {product.product_link && (
+                  <div className="mt-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full text-xs"
+                      asChild
+                    >
+                      <a 
+                        href={product.product_link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1"
+                      >
+                        <ShoppingBag className="h-3 w-3" />
+                        View Product
+                      </a>
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}
