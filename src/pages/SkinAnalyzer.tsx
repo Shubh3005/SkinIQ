@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -222,9 +223,143 @@ const SkinAnalyzer = () => {
     }
   };
 
-  // ... (keep all the existing JSX rendering code) ...
-};
+  // Adding the missing return statement with JSX
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <AnimatedBackground />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Logo size={32} />
+            <h1 className="text-2xl font-bold">Skin Analyzer</h1>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/profile')}
+            className="flex items-center gap-1"
+          >
+            <User className="h-4 w-4" />
+            Profile
+          </Button>
+        </div>
 
-// ... (keep the ResultCard and EmptyResultCard components) ...
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <CameraIcon className="h-5 w-5 text-primary" />
+                  Upload or Capture an Image
+                </h2>
+                
+                <ImageUploader onImageSelected={handleImageSelected} />
+                
+                {analyzing && (
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">{analysisStage}</span>
+                      <span className="text-sm font-medium">{Math.round(analysisProgress)}%</span>
+                    </div>
+                    <Progress value={analysisProgress} className="h-2" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            {analysisResults ? (
+              <Card className="shadow-md border-primary/20">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Scan className="h-5 w-5 text-primary" />
+                    Analysis Results
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-slate-100 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Droplet className="h-4 w-4 text-blue-500" />
+                        <h3 className="font-medium">Skin Type</h3>
+                      </div>
+                      <p className="text-slate-700 capitalize">{analysisResults.skinType}</p>
+                    </div>
+                    
+                    <div className="bg-slate-100 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ShieldCheck className="h-4 w-4 text-green-500" />
+                        <h3 className="font-medium">Skin Issues</h3>
+                      </div>
+                      <p className="text-slate-700">{analysisResults.skinIssues}</p>
+                    </div>
+                    
+                    <div className="bg-slate-100 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sun className="h-4 w-4 text-yellow-500" />
+                        <h3 className="font-medium">Sun Damage</h3>
+                      </div>
+                      <p className="text-slate-700">{analysisResults.sunDamage}</p>
+                    </div>
+                    
+                    <div className="bg-slate-100 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        <h3 className="font-medium">Unique Feature</h3>
+                      </div>
+                      <p className="text-slate-700">{analysisResults.uniqueFeature}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 mb-4">
+                    <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-300">
+                      <Palette className="h-3 w-3 mr-1" />
+                      {analysisResults.skinTone || "Skin Tone N/A"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex justify-between mt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setScanComplete(false);
+                        setAnalysisResults(null);
+                      }}
+                      className="flex items-center gap-1"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      New Scan
+                    </Button>
+                    
+                    <Button
+                      onClick={() => navigate('/skincare-ai')}
+                      className="flex items-center gap-1"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Get Personalized Advice
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="h-full flex items-center justify-center bg-slate-50 border-dashed border-2 border-slate-200">
+                <CardContent className="p-6 text-center">
+                  <div className="flex flex-col items-center justify-center h-full space-y-4">
+                    <div className="rounded-full bg-primary/10 p-4">
+                      <Scan className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-medium">No Analysis Yet</h3>
+                    <p className="text-slate-500 max-w-xs">
+                      Upload or capture an image of your face to receive a detailed skin analysis
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default SkinAnalyzer;
