@@ -61,7 +61,7 @@ const RoutineTypeGraph: React.FC<RoutineTypeGraphProps> = ({
                 <Tooltip content={<ChartTooltipContent />} />
                 <Bar 
                   dataKey="count" 
-                  fill={(entry) => entry.color || '#8884d8'} 
+                  fill="#8884d8"  
                   radius={[0, 4, 4, 0]}
                 />
               </BarChart>
