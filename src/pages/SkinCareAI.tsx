@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge"; // Add this import
 import { parseProductsFromText } from '@/utils/productParser';
 import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
 
@@ -570,3 +571,4 @@ const SkinCareAI = () => {
 };
 
 export default SkinCareAI;
+
