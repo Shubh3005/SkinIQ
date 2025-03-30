@@ -170,8 +170,6 @@ export type Database = {
       skin_scan_history: {
         Row: {
           created_at: string
-          disease: string | null
-          disease_change: boolean
           id: string
           scan_image: string | null
           skin_issues: string | null
@@ -183,8 +181,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          disease?: string | null
-          disease_change?: boolean
           id?: string
           scan_image?: string | null
           skin_issues?: string | null
@@ -196,8 +192,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          disease?: string | null
-          disease_change?: boolean
           id?: string
           scan_image?: string | null
           skin_issues?: string | null
