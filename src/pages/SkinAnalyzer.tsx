@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -428,8 +429,6 @@ const SkinAnalyzer = () => {
         </motion.div>
         
         <div className="max-w-xl mx-auto w-full space-y-6">
-          <ImageUploader onImageSelected={handleImageSelected} />
-          
           <div className="flex flex-col">
             <Card className="w-full h-full flex flex-col border-2 border-primary/20 shadow-lg shadow-primary/10 overflow-hidden">
               <CardContent className="flex-1 p-6 pt-12 flex flex-col items-center justify-center relative">
@@ -773,6 +772,9 @@ const SkinAnalyzer = () => {
               </CardContent>
             </Card>
           </div>
+          
+          {/* Image uploader as the last item */}
+          <ImageUploader onImageSelected={handleImageSelected} />
         </div>
         
         <div className="mt-8 text-center text-sm text-muted-foreground flex items-center justify-center gap-8">

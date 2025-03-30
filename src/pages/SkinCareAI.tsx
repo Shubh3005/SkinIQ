@@ -1,203 +1,219 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  MessageCircle, 
-  RefreshCw, 
-  Send, 
-  Sparkles, 
-  User, 
-  History, 
-  Lightbulb, 
-  Link2, 
-  ShoppingBag,
-  Scan 
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { MessageSquare, Send, User, Search, Check, RefreshCw, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Logo from '@/components/Logo';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { parseProductsFromText } from '@/utils/productParser';
 import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
 
-const skinTypes = ["normal", "dry", "oily", "combination", "sensitive"];
-const skinConcerns = ["acne", "aging", "dryness", "redness", "hyperpigmentation", "sensitivity"];
+interface ChatMessage {
+  sender: 'user' | 'ai';
+  message: string;
+  timestamp: Date;
+}
+
+interface RoutineStep {
+  step: string;
+  description: string;
+  time?: 'morning' | 'evening' | 'both';
+}
 
 const SkinCareAI = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [personalized, setPersonalized] = useState<RoutineStep[]>([]);
+  const [products, setProducts] = useState([]);
+  const [skinProfile, setSkinProfile] = useState<{type: string, tone: string} | null>(null);
   
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatResponse, setChatResponse] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [extractedProducts, setExtractedProducts] = useState([]);
+  // Initial welcome message
+  useEffect(() => {
+    setChatHistory([
+      {
+        sender: 'ai',
+        message: 'Hello! I\'m your personal skincare assistant. I can help you with personalized skincare routines, product recommendations, and advice based on your skin type and concerns. What can I help you with today?',
+        timestamp: new Date()
+      }
+    ]);
+    
+    // Fetch user's skin profile
+    const fetchSkinProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('skin_type, skin_tone')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching skin profile:', error);
+        } else if (data) {
+          setSkinProfile({
+            type: data.skin_type || '',
+            tone: data.skin_tone || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
+    fetchSkinProfile();
+  }, [user]);
   
-  const [skinType, setSkinType] = useState('normal');
-  const [concerns, setConcerns] = useState([]);
-  const [includeActives, setIncludeActives] = useState(false);
-  const [routineResponse, setRoutineResponse] = useState('');
-  const [routineLoading, setRoutineLoading] = useState(false);
-  const [routineProducts, setRoutineProducts] = useState([]);
-
-  const toggleConcern = (concern) => {
-    if (concerns.includes(concern)) {
-      setConcerns(concerns.filter(c => c !== concern));
-    } else {
-      setConcerns([...concerns, concern]);
-    }
-  };
-
-  const extractProductsFromText = (text) => {
-    const productRegex = /([A-Za-z0-9\s&\-']+)\s*\(?(https?:\/\/[^\s)]+)?\)?/g;
-    const amazonRegex = /https:\/\/(www\.)?amazon\.com\/[^\s]+/g;
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
     
-    const products = [];
-    const amazonLinks = text.match(amazonRegex) || [];
+    const userMessage: ChatMessage = {
+      sender: 'user',
+      message: message.trim(),
+      timestamp: new Date()
+    };
     
-    let match;
-    while ((match = productRegex.exec(text)) !== null) {
-      const productName = match[1].trim();
-      if (productName.length < 4 || productName.toLowerCase().startsWith('http')) continue;
-      
-      let productLink = match[2] || null;
-      if (!productLink && amazonLinks.length > 0) {
-        const linkIndex = Math.floor(products.length % amazonLinks.length);
-        productLink = amazonLinks[linkIndex];
-      }
-      
-      if (!products.some(p => p.product_name === productName)) {
-        products.push({
-          product_name: productName,
-          product_link: productLink,
-          product_description: null
-        });
-      }
-    }
+    setChatHistory(prev => [...prev, userMessage]);
+    setMessage('');
+    setIsLoading(true);
     
-    return products;
-  };
-
-  const handleChatSubmit = async (e) => {
-    e.preventDefault();
-    if (!chatMessage.trim()) return;
-    
-    setChatLoading(true);
     try {
+      // Call to Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('skincare-ai', {
         body: {
-          action: 'chat',
-          message: chatMessage
+          message: userMessage.message,
+          userSkinType: skinProfile?.type || '',
+          userSkinTone: skinProfile?.tone || '',
+          history: chatHistory.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.message
+          }))
         }
       });
       
-      if (error) throw error;
-      const cleanedResponse = cleanMarkdown(data.result);
-      setChatResponse(cleanedResponse);
-      
-      const products = extractProductsFromText(cleanedResponse);
-      setExtractedProducts(products);
-      
-      if (user) {
-        await supabase.functions.invoke('skincare-history', {
-          body: {
-            action: 'save-chat',
-            data: {
-              message: chatMessage,
-              response: cleanedResponse,
-              products: products
-            }
-          }
-        });
+      if (error) {
+        console.error('Error from skincare-ai function:', error);
+        toast.error('Failed to get a response');
+        return;
       }
       
-      toast.success('Response received and saved to your history');
-    } catch (error) {
-      console.error('Error calling AI:', error);
-      toast.error('Failed to get response. Please try again.');
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const handleGenerateRoutine = async () => {
-    setRoutineLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('skincare-ai', {
-        body: {
-          action: 'generate-routine',
-          skin_type: skinType,
-          concerns,
-          include_actives: includeActives
+      const aiResponse: ChatMessage = {
+        sender: 'ai',
+        message: data.message || 'Sorry, I couldn\'t process your request',
+        timestamp: new Date()
+      };
+      
+      setChatHistory(prev => [...prev, aiResponse]);
+      
+      // Parse and store recommended products
+      const parsedProducts = parseProductsFromText(aiResponse.message);
+      if (parsedProducts.length > 0) {
+        setProducts(parsedProducts);
+        
+        // Save recommended products to database
+        if (user) {
+          try {
+            await supabase.from('recommended_products').insert(
+              parsedProducts.map(product => ({
+                user_id: user.id,
+                product_name: product.product_name,
+                product_description: product.product_description || null,
+                product_link: product.product_link || null
+              }))
+            );
+          } catch (err) {
+            console.error('Error saving products:', err);
+          }
         }
-      });
-      
-      if (error) throw error;
-      const cleanedResponse = cleanMarkdown(data.result);
-      setRoutineResponse(cleanedResponse);
-      
-      const products = extractProductsFromText(cleanedResponse);
-      setRoutineProducts(products);
-      
-      if (user) {
-        await supabase.functions.invoke('skincare-history', {
-          body: {
-            action: 'save-chat',
-            data: {
-              message: `Generate a skincare routine for ${skinType} skin with concerns: ${concerns.join(', ')}${includeActives ? ' including active ingredients' : ''}`,
-              response: cleanedResponse,
-              products: products
-            }
-          }
-        });
       }
       
-      toast.success('Routine generated and saved to your history');
+      // Try to extract routine steps
+      if (aiResponse.message.toLowerCase().includes('routine') || 
+          aiResponse.message.toLowerCase().includes('steps') ||
+          message.toLowerCase().includes('routine')) {
+        const steps = extractRoutineSteps(aiResponse.message);
+        if (steps.length > 0) {
+          setPersonalized(steps);
+        }
+      }
+      
+      // Store chat history in database
+      if (user) {
+        try {
+          await supabase.from('chat_history').insert({
+            user_id: user.id,
+            message: userMessage.message,
+            response: aiResponse.message
+          });
+        } catch (err) {
+          console.error('Error storing chat history:', err);
+        }
+      }
+      
     } catch (error) {
-      console.error('Error generating routine:', error);
-      toast.error('Failed to generate routine. Please try again.');
+      console.error('Error processing message:', error);
+      toast.error('Something went wrong');
     } finally {
-      setRoutineLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const cleanMarkdown = (text) => {
-    if (!text) return '';
-    
-    let cleaned = text.replace(/#+\s/g, '');
-    cleaned = cleaned.replace(/\*\*/g, '');
-    cleaned = cleaned.replace(/\*/g, '');
-    cleaned = cleaned.replace(/\_\_/g, '');
-    cleaned = cleaned.replace(/\_/g, '');
-    cleaned = cleaned.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');
-    
-    return cleaned;
+  
+  const extractRoutineSteps = (text: string): RoutineStep[] => {
+    try {
+      const steps: RoutineStep[] = [];
+      const lines = text.split('\n');
+      
+      let currentSection: 'morning' | 'evening' | 'both' = 'both';
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine.toLowerCase().includes('morning routine') || 
+            trimmedLine.toLowerCase().includes('am routine')) {
+          currentSection = 'morning';
+          continue;
+        }
+        
+        if (trimmedLine.toLowerCase().includes('evening routine') || 
+            trimmedLine.toLowerCase().includes('night routine') || 
+            trimmedLine.toLowerCase().includes('pm routine')) {
+          currentSection = 'evening';
+          continue;
+        }
+        
+        // Look for numbered or bulleted step
+        const stepMatch = trimmedLine.match(/^(\d+\.|[\*\-•])\s*([^:]+)(?::\s*(.+))?$/);
+        
+        if (stepMatch) {
+          const step = stepMatch[2].trim();
+          const description = stepMatch[3] ? stepMatch[3].trim() : '';
+          
+          steps.push({
+            step,
+            description,
+            time: currentSection
+          });
+        }
+      }
+      
+      return steps;
+    } catch (error) {
+      console.error('Error extracting routine steps:', error);
+      return [];
+    }
   };
 
   return (
@@ -230,7 +246,7 @@ const SkinCareAI = () => {
               className="flex items-center gap-2"
               onClick={() => navigate('/skin-analyzer')}
             >
-              <Scan className="h-4 w-4" />
+              <Search className="h-4 w-4" />
               Skin Analyzer
             </Button>
           </div>
@@ -243,273 +259,205 @@ const SkinCareAI = () => {
           className="mb-8 text-center"
         >
           <h1 className="text-3xl font-bold">
-            Your <span className="text-primary">SkinIQ</span> Assistant
+            <span className="text-primary">SkinCare</span> AI Assistant
           </h1>
           <p className="text-muted-foreground mt-2">
-            Chat with our AI or generate personalized skincare routines
+            Get personalized skincare advice and product recommendations
           </p>
         </motion.div>
         
-        <Tabs defaultValue="chat" className="w-full max-w-5xl mx-auto">
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="chat" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Chat with AI
-            </TabsTrigger>
-            <TabsTrigger value="routine" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Generate Routine
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="chat">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10">
-                  <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Lightbulb className="h-5 w-5 text-primary animate-pulse" />
-                          Skincare Chat
-                        </CardTitle>
-                        <CardDescription>
-                          Ask any skincare-related questions and get expert advice
-                        </CardDescription>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 max-w-screen-xl w-full flex-1">
+          {/* First column (chat) - takes 3/5 of the space */}
+          <div className="md:col-span-3 flex flex-col">
+            <Card className="flex-1 border-2 border-primary/20 shadow-lg shadow-primary/10 flex flex-col h-[600px]">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  SkinCare AI Chat
+                </CardTitle>
+                <CardDescription>
+                  Ask questions about skincare routines and get personalized advice
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] rounded-lg p-3 ${
+                            msg.sender === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-line">{msg.message}</p>
+                          <p className="text-xs mt-1 opacity-70">
+                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       </div>
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1"
-                              onClick={() => navigate('/profile')}
-                            >
-                              <History className="h-4 w-4" />
-                              <span className="sr-only md:not-sr-only">History</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            View chat history
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] rounded-lg p-3 bg-muted">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-150"></div>
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse delay-300"></div>
+                            <span className="text-xs">Thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                <div className="p-4 border-t">
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Ask about skincare routines, products, or specific concerns..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="min-h-[60px]"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      className="h-full aspect-square"
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || isLoading}
+                    >
+                      {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={() => setMessage("What's a good routine for my skin type?")}
+                      disabled={isLoading}
+                    >
+                      Routine for my skin type
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={() => setMessage("Recommend products for dry sensitive skin")}
+                      disabled={isLoading}
+                    >
+                      Product recommendations
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Second column (results) - takes 2/5 of the space */}
+          <div className="md:col-span-2 flex flex-col gap-6">
+            <Tabs defaultValue="routine" className="flex-1">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="routine" className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  <span>Personalized Routine</span>
+                </TabsTrigger>
+                <TabsTrigger value="products" className="flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  <span>Products</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="routine" className="mt-4 h-[550px]">
+                <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10 h-full">
+                  <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+                    <CardTitle className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-primary" />
+                      Personalized Routine
+                    </CardTitle>
+                    <CardDescription>
+                      Customized skincare steps based on your profile and concerns
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    {chatResponse && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-muted/70 backdrop-blur-sm p-6 rounded-lg mb-6 border border-primary/10 whitespace-pre-wrap shadow-md"
-                      >
-                        <div className="flex items-center gap-2 text-primary mb-2 font-medium">
-                          <Sparkles className="h-4 w-4" />
-                          AI Response
+                    <ScrollArea className="h-[400px] pr-4">
+                      {personalized.length > 0 ? (
+                        <div className="space-y-6">
+                          {['morning', 'evening', 'both'].map(time => {
+                            const timeSteps = personalized.filter(step => 
+                              step.time === time || (time === 'both' && !step.time)
+                            );
+                            
+                            if (timeSteps.length === 0) return null;
+                            
+                            return (
+                              <div key={time} className="space-y-4">
+                                <h3 className="font-semibold text-primary capitalize">
+                                  {time === 'both' ? 'Daily' : `${time.charAt(0).toUpperCase() + time.slice(1)}`} Routine
+                                </h3>
+                                <div className="space-y-3">
+                                  {timeSteps.map((step, index) => (
+                                    <div 
+                                      key={index} 
+                                      className="p-3 rounded-lg border border-primary/10 bg-muted/50"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary/20 text-primary h-6 w-6 rounded-full flex items-center justify-center text-sm font-medium">
+                                          {index + 1}
+                                        </div>
+                                        <h4 className="font-medium">{step.step}</h4>
+                                      </div>
+                                      {step.description && (
+                                        <p className="mt-2 text-sm text-muted-foreground pl-8">
+                                          {step.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        
-                        {chatResponse.split('\n').map((paragraph, i) => (
-                          paragraph ? (
-                            <p key={i} className="mb-3 last:mb-0">
-                              {paragraph}
-                            </p>
-                          ) : <br key={i} />
-                        ))}
-                      </motion.div>
-                    )}
-                    <form onSubmit={handleChatSubmit}>
-                      <Textarea 
-                        placeholder="e.g., How can I treat hormonal acne?" 
-                        value={chatMessage}
-                        onChange={(e) => setChatMessage(e.target.value)}
-                        className="min-h-[120px] border-2 focus-visible:ring-primary/30 shadow-sm"
-                        disabled={chatLoading}
-                      />
-                    </form>
-                  </CardContent>
-                  <CardFooter className="border-t bg-muted/30">
-                    <Button 
-                      onClick={handleChatSubmit} 
-                      disabled={!chatMessage.trim() || chatLoading}
-                      className="w-full relative overflow-hidden group"
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
-                      {chatLoading ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
                       ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-              
-              <div className="lg:col-span-1">
-                {extractedProducts.length > 0 && (
-                  <RecommendedProducts 
-                    products={extractedProducts} 
-                    title="Recommended Products"
-                    description="Based on your skincare chat"
-                  />
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="routine">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10">
-                  <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-primary" />
-                          Routine Generator
-                        </CardTitle>
-                        <CardDescription>
-                          Create a customized skincare routine based on your needs
-                        </CardDescription>
-                      </div>
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1"
-                              onClick={() => navigate('/profile')}
-                            >
-                              <History className="h-4 w-4" />
-                              <span className="sr-only md:not-sr-only">History</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            View routine history
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="skin-type">Skin Type</Label>
-                      <Select value={skinType} onValueChange={setSkinType}>
-                        <SelectTrigger id="skin-type" className="border-2 focus:ring-primary/30">
-                          <SelectValue placeholder="Select your skin type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {skinTypes.map(type => (
-                            <SelectItem key={type} value={type}>
-                              {type.charAt(0).toUpperCase() + type.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Skin Concerns (select all that apply)</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {skinConcerns.map(concern => (
-                          <div key={concern} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`concern-${concern}`} 
-                              checked={concerns.includes(concern)}
-                              onCheckedChange={() => toggleConcern(concern)}
-                              className="border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                            />
-                            <label
-                              htmlFor={`concern-${concern}`}
-                              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {concern.charAt(0).toUpperCase() + concern.slice(1)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="include-actives" 
-                        checked={includeActives}
-                        onCheckedChange={(checked) => setIncludeActives(checked === true)}
-                        className="border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                      />
-                      <label
-                        htmlFor="include-actives"
-                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Include active ingredients (retinoids, acids, etc.)
-                      </label>
-                    </div>
-                    
-                    {routineResponse && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-muted/70 backdrop-blur-sm p-6 rounded-lg mt-4 border border-primary/10 whitespace-pre-wrap shadow-md"
-                      >
-                        <div className="flex items-center gap-2 text-primary mb-2 font-medium">
-                          <Sparkles className="h-4 w-4" />
-                          Your Personalized Routine
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                          <p className="text-muted-foreground mb-2">
+                            Ask the AI about a skincare routine for your skin type to see personalized steps.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMessage("Can you suggest a simple skincare routine for me?")}
+                            disabled={isLoading}
+                          >
+                            Get Routine Suggestions
+                          </Button>
                         </div>
-                        
-                        {routineResponse.split('\n').map((paragraph, i) => (
-                          paragraph ? (
-                            <p key={i} className="mb-3 last:mb-0">
-                              {paragraph}
-                            </p>
-                          ) : <br key={i} />
-                        ))}
-                      </motion.div>
-                    )}
-                  </CardContent>
-                  <CardFooter className="border-t bg-muted/30">
-                    <Button 
-                      onClick={handleGenerateRoutine} 
-                      disabled={routineLoading}
-                      className="w-full relative overflow-hidden group"
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
-                      {routineLoading ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                          Generate Routine
-                        </>
                       )}
-                    </Button>
-                  </CardFooter>
+                    </ScrollArea>
+                  </CardContent>
                 </Card>
-              </div>
+              </TabsContent>
               
-              <div className="lg:col-span-1">
-                {routineProducts.length > 0 && (
-                  <RecommendedProducts 
-                    products={routineProducts}
-                    title="Recommended Products"
-                    description="Based on your personalized routine"
-                  />
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="products" className="mt-4 h-[550px]">
+                <RecommendedProducts 
+                  products={products}
+                  title="Recommended Products"
+                  description="Products tailored to your skin needs"
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
