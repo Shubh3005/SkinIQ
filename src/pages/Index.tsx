@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -63,9 +62,6 @@ const Index = () => {
       }
     };
     fetchProfileData();
-    
-    // Here we would fetch routine stats data from the database
-    // For now, we're using the mock data defined in state
   }, [user]);
   
   const handleSignOut = async () => {
@@ -246,10 +242,10 @@ const Index = () => {
           </div>
           
           {user ? (
-            <>
+            <div className="space-y-8">
               <RoutineCalendar />
               <StatsBarGraph data={routineStats} title="Routine Completion Stats" description="Weekly statistics of completed skincare routines" />
-            </>
+            </div>
           ) : (
             <div className="text-center bg-card p-10 rounded-xl shadow-md">
               <h3 className="text-xl font-semibold mb-4">Sign in to track your routines</h3>

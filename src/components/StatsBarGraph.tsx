@@ -26,20 +26,20 @@ const StatsBarGraph: React.FC<StatsBarGraphProps> = ({
   const chartConfig = {
     morning: {
       label: "Morning",
-      color: "#93c5fd" // blue-300
+      color: "#f59e0b" // amber-500 to match calendar morning color
     },
     evening: {
       label: "Evening",
-      color: "#8b5cf6" // purple-500
+      color: "#3b82f6" // blue-500 to match calendar evening color
     },
     both: {
       label: "Both",
-      color: "#22c55e" // green-500
+      color: "#22c55e" // green-500 to match calendar both routines color
     }
   };
 
   return (
-    <Card className="w-full mt-8 mb-8">
+    <Card className="w-full mt-8">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
