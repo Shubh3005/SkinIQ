@@ -9,7 +9,6 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { UserProfileCard } from '@/components/profile/UserProfileCard';
 import { HistoryCard } from '@/components/profile/HistoryCard';
 import { HealthcareInfoCard } from '@/components/profile/HealthcareInfoCard';
-import RoutineCalendar from '@/components/RoutineCalendar';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -105,12 +104,6 @@ const Profile = () => {
             />
           </div>
         </div>
-
-        {user && (
-          <div className="mt-4 mb-8 max-w-6xl mx-auto w-full">
-            <RoutineCalendar />
-          </div>
-        )}
 
         <div className="mt-8 text-center text-sm text-muted-foreground flex items-center justify-center gap-8">
           <div>
