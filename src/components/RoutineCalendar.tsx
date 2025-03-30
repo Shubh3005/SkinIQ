@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Star, Award, CheckCircle } from 'lucide-react';
+import { Trophy, Star, Award, CheckCircle, CalendarCheck } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
