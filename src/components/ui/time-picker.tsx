@@ -3,7 +3,7 @@ import * as React from "react"
 import { Input } from "./input"
 import { cn } from "@/lib/utils"
 
-export interface TimePickerProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface TimePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   onChange?: (time: string) => void
 }
 

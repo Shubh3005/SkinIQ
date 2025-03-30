@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TimePicker } from "@/components/ui/time-picker";
 import { Stethoscope, Bell, Phone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +19,7 @@ interface HealthcareFormData {
 export const HealthcareInfoCard = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<HealthcareFormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<HealthcareFormData>({
     defaultValues: {
       physician_name: '',
       physician_phone: '',

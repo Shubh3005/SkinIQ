@@ -64,24 +64,36 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          evening_reminder: string | null
           full_name: string | null
           id: string
+          morning_reminder: string | null
+          physician_name: string | null
+          physician_phone: string | null
           skin_type: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          evening_reminder?: string | null
           full_name?: string | null
           id: string
+          morning_reminder?: string | null
+          physician_name?: string | null
+          physician_phone?: string | null
           skin_type?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          evening_reminder?: string | null
           full_name?: string | null
           id?: string
+          morning_reminder?: string | null
+          physician_name?: string | null
+          physician_phone?: string | null
           skin_type?: string | null
           updated_at?: string | null
         }
