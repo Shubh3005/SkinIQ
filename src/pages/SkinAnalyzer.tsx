@@ -1,7 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 
 import { 
   Camera, 
@@ -100,10 +98,66 @@ const SkinAnalyzer = () => {
         
         const cornerSize = 20;
         const cornerOffset = 40;
-        
-        // Drawing code for corners (unchanged)
+
+        // Top-left corner
+        ctx.beginPath();
+        ctx.moveTo(cornerOffset, 0);
+        ctx.lineTo(cornerOffset, cornerSize);
+        ctx.lineTo(0, cornerSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, cornerOffset);
+        ctx.lineTo(cornerSize, cornerOffset);
+        ctx.lineTo(cornerSize, 0);
+        ctx.stroke();
+
+        // Top-right corner
+        ctx.beginPath();
+        ctx.moveTo(canvas.width - cornerOffset, 0);
+        ctx.lineTo(canvas.width - cornerOffset, cornerSize);
+        ctx.lineTo(canvas.width, cornerSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width, cornerOffset);
+        ctx.lineTo(canvas.width - cornerSize, cornerOffset);
+        ctx.lineTo(canvas.width - cornerSize, 0);
+        ctx.stroke();
+
+        // Bottom-left corner
+        ctx.beginPath();
+        ctx.moveTo(cornerOffset, canvas.height);
+        ctx.lineTo(cornerOffset, canvas.height - cornerSize);
+        ctx.lineTo(0, canvas.height - cornerSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - cornerOffset);
+        ctx.lineTo(cornerSize, canvas.height - cornerOffset);
+        ctx.lineTo(cornerSize, canvas.height);
+        ctx.stroke();
+
+        // Bottom-right corner
+        ctx.beginPath();
+        ctx.moveTo(canvas.width - cornerOffset, canvas.height);
+        ctx.lineTo(canvas.width - cornerOffset, canvas.height - cornerSize);
+        ctx.lineTo(canvas.width, canvas.height - cornerSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width, canvas.height - cornerOffset);
+        ctx.lineTo(canvas.width - cornerSize, canvas.height - cornerOffset);
+        ctx.lineTo(canvas.width - cornerSize, canvas.height);
+        ctx.stroke();
       } else {
-        // Scanning effect drawing code (unchanged)
+        ctx.fillStyle = 'rgba(120, 226, 160, 0.2)';
+        ctx.fillRect(0, scanLine, canvas.width, scanSpeed);
+        
+        scanLine += scanSpeed;
+        if (scanLine > canvas.height) {
+          scanLine = 0;
+        }
       }
       
       animationFrame = requestAnimationFrame(drawScanEffect);
@@ -168,57 +222,43 @@ const SkinAnalyzer = () => {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const blob = await new Promise<Blob | null>(resolve => 
-        canvas.toBlob(resolve, 'image/jpeg', 0.8)
-      );
+      setAnalysisStage('Preparing image for analysis');
+      setAnalysisProgress(20);
+      
+      // Convert canvas to base64
+      const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      
+      setAnalysisStage('Analyzing skin features');
+      setAnalysisProgress(50);
 
-      if (!blob) throw new Error('Failed to capture image');
-
-      const formData = new FormData();
-      formData.append('image', blob, 'skin-analysis.jpg');
-
-      setAnalysisStage('Sending image for analysis');
-      setAnalysisProgress(30);
-
-      const response = await fetch('http://127.0.0.1:8000/predict', {
-        method: 'POST',
-        body: formData,
+      // Call our Supabase Edge Function to analyze the skin
+      const { data, error } = await supabase.functions.invoke('skincare-history', {
+        body: {
+          action: 'analyze-skin',
+          data: {
+            imageBase64
+          }
+        }
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      setAnalysisStage('Analyzing skin features');
-      setAnalysisProgress(60);
-
-      const result = await response.json();
+      if (error) throw error;
 
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Ensure the result has all the required fields
-      const enhancedResult = {
-        ...result,
-        skinType: result.skinType || 'Normal',
-        skinTone: result.skinTone || 'Medium',
-        skinIssues: result.skinIssues || 'None detected',
-        sunDamage: result.sunDamage || 'Minimal',
-        uniqueFeature: result.uniqueFeature || 'None detected',
-        disease: result.disease || 'No disease detected',
-        acneSeverity: result.acneSeverity || 'None'
-      };
-
-      setAnalysisResults(enhancedResult);
+      // Set the results from our Edge Function
+      setAnalysisResults(data);
       setScanComplete(true);
       toast.success("Analysis complete");
 
-      if (user && enhancedResult) {
+      if (user && data) {
         try {
           await supabase.functions.invoke('skincare-history', {
             body: {
               action: 'save-scan',
               data: {
-                ...enhancedResult,
-                scanImage: canvas.toDataURL('image/jpeg', 0.8)
+                ...data,
+                scanImage: imageBase64
               }
             }
           });
@@ -239,57 +279,51 @@ const SkinAnalyzer = () => {
       setAnalyzing(true);
       setAnalysisProgress(0);
       
-      const formData = new FormData();
-      formData.append('image', file);
-
       setAnalysisStage('Processing uploaded image');
-      setAnalysisProgress(40);
+      setAnalysisProgress(30);
 
-      const response = await fetch('http://127.0.0.1:8000/predict', {
-        method: 'POST',
-        body: formData,
+      // Convert the file to a data URL
+      const reader = new FileReader();
+      const imageBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      
+      setAnalysisStage('Analyzing skin features');
+      setAnalysisProgress(60);
+
+      // Call our Supabase Edge Function to analyze the skin
+      const { data, error } = await supabase.functions.invoke('skincare-history', {
+        body: {
+          action: 'analyze-skin',
+          data: {
+            imageBase64
+          }
+        }
       });
 
-      if (!response.ok) throw new Error('Analysis failed');
-      
-      const result = await response.json();
+      if (error) throw error;
       
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Ensure the result has all the required fields
-      const enhancedResult = {
-        ...result,
-        skinType: result.skinType || 'Normal',
-        skinTone: result.skinTone || 'Medium',
-        skinIssues: result.skinIssues || 'None detected',
-        sunDamage: result.sunDamage || 'Minimal',
-        uniqueFeature: result.uniqueFeature || 'None detected',
-        disease: result.disease || 'No disease detected',
-        acneSeverity: result.acneSeverity || 'None'
-      };
-      
-      setAnalysisResults(enhancedResult);
+      // Set the results from our Edge Function
+      setAnalysisResults(data);
       setScanComplete(true);
       toast.success("Analysis complete");
 
-      if (user && enhancedResult) {
+      if (user && data) {
         try {
-          // Convert the file to a Data URL to save in history
-          const reader = new FileReader();
-          reader.onloadend = async () => {
-            const base64data = reader.result as string;
-            await supabase.functions.invoke('skincare-history', {
-              body: {
-                action: 'save-scan',
-                data: {
-                  ...enhancedResult,
-                  scanImage: base64data
-                }
+          await supabase.functions.invoke('skincare-history', {
+            body: {
+              action: 'save-scan',
+              data: {
+                ...data,
+                scanImage: imageBase64
               }
-            });
-          };
-          reader.readAsDataURL(file);
+            }
+          });
         } catch (error) {
           console.error('Error saving scan to history:', error);
         }
