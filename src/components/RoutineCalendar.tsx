@@ -33,6 +33,9 @@ interface RoutineCalendarProps {
   variant?: 'full' | 'simple';
 }
 
+// Define a literal type for date status
+type DateStatus = 'morning' | 'evening' | 'both' | 'none';
+
 const RoutineCalendar = ({ variant = 'full' }: RoutineCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [routineLogs, setRoutineLogs] = useState<RoutineLogType[]>([]);
@@ -255,20 +258,21 @@ const RoutineCalendar = ({ variant = 'full' }: RoutineCalendarProps) => {
     }
   };
 
-  const getDateStatus = (date: Date) => {
+  const getDateStatus = (date: Date): DateStatus => {
     if (!routineLogs) return 'none';
-    return routineLogs.some(scan => {
-      const scanDate = new Date(scan.date);
-      const morning = scan.morning_completed;
-      const evening = scan.evening_completed;
-      
-      if (scanDate.toDateString() === date.toDateString()) {
-        if (morning && evening) return 'both';
-        if (morning) return 'morning';
-        if (evening) return 'evening';
-      }
-      return false;
-    }) || 'none';
+    
+    const foundLog = routineLogs.find(log => {
+      const logDate = new Date(log.date);
+      return logDate.toDateString() === date.toDateString();
+    });
+    
+    if (foundLog) {
+      if (foundLog.morning_completed && foundLog.evening_completed) return 'both';
+      if (foundLog.morning_completed) return 'morning';
+      if (foundLog.evening_completed) return 'evening';
+    }
+    
+    return 'none';
   };
 
   const getDayClass = (date: Date): string => {
@@ -287,9 +291,9 @@ const RoutineCalendar = ({ variant = 'full' }: RoutineCalendarProps) => {
           selected={selectedDate} 
           onSelect={setSelectedDate}
           modifiers={{
-            morning: date => getDateStatus(date) === 'morning',
-            evening: date => getDateStatus(date) === 'evening',
-            both: date => getDateStatus(date) === 'both'
+            morning: (date) => getDateStatus(date) === 'morning',
+            evening: (date) => getDateStatus(date) === 'evening',
+            both: (date) => getDateStatus(date) === 'both'
           }}
           modifiersClassNames={{
             morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
@@ -352,9 +356,9 @@ const RoutineCalendar = ({ variant = 'full' }: RoutineCalendarProps) => {
             selected={selectedDate} 
             onSelect={setSelectedDate}
             modifiers={{
-              morning: date => getDateStatus(date) === 'morning',
-              evening: date => getDateStatus(date) === 'evening',
-              both: date => getDateStatus(date) === 'both'
+              morning: (date) => getDateStatus(date) === 'morning',
+              evening: (date) => getDateStatus(date) === 'evening',
+              both: (date) => getDateStatus(date) === 'both'
             }}
             modifiersClassNames={{
               morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
