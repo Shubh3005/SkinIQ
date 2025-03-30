@@ -231,22 +231,27 @@ const SkinAnalyzer = () => {
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(50);
 
-      // Call our Supabase Edge Function to analyze the skin
-      const { data, error } = await supabase.functions.invoke('skincare-history', {
-        body: {
-          action: 'analyze-skin',
-          data: {
-            imageBase64
-          }
-        }
+      // Call the external API
+      const response = await fetch('http://127.0.0.1:8000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageBase64
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
+      const data = await response.json();
+      
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Set the results from our Edge Function
+      // Set the results from the API
       setAnalysisResults(data);
       setScanComplete(true);
       toast.success("Analysis complete");
@@ -268,7 +273,7 @@ const SkinAnalyzer = () => {
       }
     } catch (error) {
       console.error('Error analyzing image:', error);
-      toast.error("Analysis failed. Please try again.");
+      toast.error(`Analysis failed: ${error.message}. Please try again.`);
     } finally {
       setAnalyzing(false);
     }
@@ -293,22 +298,27 @@ const SkinAnalyzer = () => {
       setAnalysisStage('Analyzing skin features');
       setAnalysisProgress(60);
 
-      // Call our Supabase Edge Function to analyze the skin - we're bypassing auth for analysis
-      const { data, error } = await supabase.functions.invoke('skincare-history', {
-        body: {
-          action: 'analyze-skin',
-          data: {
-            imageBase64
-          }
-        }
+      // Call the external API
+      const response = await fetch('http://127.0.0.1:8000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageBase64
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
       
       setAnalysisProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Set the results from our Edge Function
+      // Set the results from the API
       setAnalysisResults(data);
       setScanComplete(true);
       toast.success("Analysis complete");
@@ -330,7 +340,7 @@ const SkinAnalyzer = () => {
       }
     } catch (error) {
       console.error('Upload analysis error:', error);
-      toast.error("Image analysis failed");
+      toast.error(`Image analysis failed: ${error.message}`);
     } finally {
       setAnalyzing(false);
     }
