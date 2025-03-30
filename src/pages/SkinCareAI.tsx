@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, CheckCheck, MessageSquare } from 'lucide-react';
+import { Send, CheckCheck, MessageSquare, User, Scan } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { parseProductsFromText } from '@/utils/productParser';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { RecommendedProducts } from '@/components/skincare/RecommendedProducts';
 import { useNavigate } from 'react-router-dom';
+import Logo from '@/components/Logo';
 
 interface Message {
   role: string;
@@ -231,22 +232,40 @@ const SkinCareAI = () => {
       <AnimatedBackground />
       
       <div className="max-w-6xl mx-auto px-4 pt-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            <span className="text-amber-700">SkinCare</span>{" "}
-            <span className="text-slate-800">AI Assistant</span>
-          </h1>
-          <p className="text-slate-600 mt-2">
-            Get personalized skincare advice and product recommendations
-          </p>
+        {/* Header with navigation */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Logo size="sm" />
+            <h1 className="text-2xl font-bold">SkinCare AI</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => navigate('/skin-analyzer')}
+            >
+              <Scan className="h-4 w-4" />
+              Skin Analyzer
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => navigate('/profile')}
+            >
+              <User className="h-4 w-4" />
+              Profile
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-5 gap-6">
           <div className="md:col-span-3">
-            <Card className="overflow-hidden border-amber-100 shadow-md">
-              <div className="p-4 border-b border-amber-100 bg-amber-50/50">
+            <Card className="overflow-hidden border-primary/20 shadow-md">
+              <div className="p-4 border-b border-primary/20 bg-primary/5">
                 <div className="flex items-center">
-                  <MessageSquare className="h-5 w-5 text-amber-700 mr-2" />
+                  <MessageSquare className="h-5 w-5 text-primary mr-2" />
                   <h2 className="text-lg font-semibold text-slate-800">SkinCare AI Chat</h2>
                 </div>
                 <p className="text-sm text-slate-600 mt-1">
@@ -265,10 +284,10 @@ const SkinCareAI = () => {
                     <div
                       className={`rounded-2xl p-3 ${
                         message.role === 'user'
-                          ? 'bg-amber-100 text-slate-800 ml-auto'
+                          ? 'bg-primary/10 text-slate-800 ml-auto'
                           : message.role === 'system'
-                            ? 'bg-amber-50 border border-amber-100 text-slate-700'
-                            : 'bg-white border border-amber-100 text-slate-800'
+                            ? 'bg-primary/5 border border-primary/10 text-slate-700'
+                            : 'bg-white border border-primary/10 text-slate-800'
                       }`}
                     >
                       {message.role !== 'user' ? (
@@ -299,19 +318,19 @@ const SkinCareAI = () => {
                 <div ref={messagesEndRef} />
               </div>
               
-              <form onSubmit={handleSubmit} className="p-4 border-t border-amber-100">
+              <form onSubmit={handleSubmit} className="p-4 border-t border-primary/10">
                 <div className="relative">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask about skincare routines, products, or specific concerns..."
-                    className="min-h-[60px] pr-16 resize-none border-amber-200 focus-visible:ring-amber-500"
+                    className="min-h-[60px] pr-16 resize-none border-primary/20 focus-visible:ring-primary"
                   />
                   <Button 
                     type="submit" 
                     size="sm" 
                     disabled={isLoading || !input.trim()} 
-                    className="absolute right-2 bottom-2 bg-amber-600 hover:bg-amber-700"
+                    className="absolute right-2 bottom-2 bg-primary hover:bg-primary/90"
                   >
                     {isLoading ? (
                       <span className="animate-spin">⟳</span>
@@ -326,7 +345,7 @@ const SkinCareAI = () => {
                     type="button" 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs border-amber-200 text-amber-800"
+                    className="text-xs border-primary/20 text-primary"
                     onClick={() => handleQuickPrompt("Routine for my skin type")}
                   >
                     Routine for my skin type
@@ -335,7 +354,7 @@ const SkinCareAI = () => {
                     type="button" 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs border-amber-200 text-amber-800"
+                    className="text-xs border-primary/20 text-primary"
                     onClick={() => handleQuickPrompt("Product recommendations")}
                   >
                     Product recommendations
@@ -347,27 +366,27 @@ const SkinCareAI = () => {
           
           <div className="md:col-span-2">
             <Tabs defaultValue="routine" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-amber-50 border border-amber-100">
+              <TabsList className="grid w-full grid-cols-2 bg-primary/5 border border-primary/10">
                 <TabsTrigger 
                   value="routine" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-amber-800"
+                  className="data-[state=active]:bg-white data-[state=active]:text-primary"
                 >
                   <CheckCheck className="h-4 w-4 mr-1" />
                   Personalized Routine
                 </TabsTrigger>
                 <TabsTrigger 
                   value="products" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-amber-800"
+                  className="data-[state=active]:bg-white data-[state=active]:text-primary"
                 >
                   Products
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="routine" className="mt-4">
-                <Card className="border-amber-100 shadow-sm">
+                <Card className="border-primary/10 shadow-sm">
                   <CardContent className="p-6">
                     <div className="flex items-center mb-4">
-                      <CheckCheck className="h-5 w-5 text-amber-600 mr-2" />
+                      <CheckCheck className="h-5 w-5 text-primary mr-2" />
                       <h3 className="text-lg font-semibold text-slate-800">Personalized Routine</h3>
                     </div>
                     <p className="text-slate-600 mb-4">
@@ -381,7 +400,7 @@ const SkinCareAI = () => {
                       </p>
                       <Button 
                         onClick={getRoutineSuggestions}
-                        className="bg-amber-600 hover:bg-amber-700"
+                        className="bg-primary hover:bg-primary/90"
                       >
                         Get Routine Suggestions
                       </Button>
