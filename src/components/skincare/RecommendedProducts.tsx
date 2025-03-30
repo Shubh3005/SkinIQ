@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ExternalLink } from 'lucide-react';
+import { ShoppingBag, Link2, ExternalLink } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { 
   Card, 
@@ -29,29 +29,7 @@ export const RecommendedProducts = ({
   title = "Recommended Products",
   description = "Products that may help with your skin concerns"
 }: RecommendedProductsProps) => {
-  if (!products || products.length === 0) {
-    return (
-      <Card className="border-amber-100 shadow-sm h-full">
-        <CardHeader className="bg-amber-50/50">
-          <CardTitle className="flex items-center gap-2 text-slate-800">
-            <ShoppingBag className="h-5 w-5 text-amber-600" />
-            {title}
-          </CardTitle>
-          <CardDescription className="text-slate-600">
-            {description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 flex flex-col items-center justify-center text-center min-h-[200px]">
-          <p className="text-slate-600 mb-2">
-            No products have been recommended yet.
-          </p>
-          <p className="text-sm text-slate-500">
-            Ask the AI about products for your skin type and concerns to see recommendations here.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!products.length) return null;
 
   const isAmazonLink = (link: string) => {
     return link && link.includes('amazon.com');
@@ -63,29 +41,29 @@ export const RecommendedProducts = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="border-amber-100 shadow-sm h-full">
-        <CardHeader className="bg-amber-50/50">
-          <CardTitle className="flex items-center gap-2 text-slate-800">
-            <ShoppingBag className="h-5 w-5 text-amber-600" />
+      <Card className="border-2 border-primary/20 shadow-lg shadow-primary/10 h-full">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent">
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-primary" />
             {title}
           </CardTitle>
-          <CardDescription className="text-slate-600">
+          <CardDescription>
             {description}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 gap-3">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 gap-4">
             {products.map((product, index) => (
               <div 
                 key={index} 
-                className="p-3 rounded-lg border border-amber-100 bg-white flex flex-col"
+                className="p-4 rounded-lg border border-primary/10 bg-muted/50 flex flex-col"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="h-6 w-6 rounded-full p-1 flex items-center justify-center bg-amber-50 text-amber-800 border-amber-200">
+                    <Badge variant="outline" className="h-6 w-6 rounded-full p-1 flex items-center justify-center">
                       {index + 1}
                     </Badge>
-                    <h3 className="font-medium text-slate-800">{product.product_name}</h3>
+                    <h3 className="font-medium">{product.product_name}</h3>
                   </div>
                   
                   {product.product_link && (
@@ -93,22 +71,22 @@ export const RecommendedProducts = ({
                       href={product.product_link} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-amber-600 hover:text-amber-800"
+                      className="text-primary hover:text-primary/80"
                     >
                       {isAmazonLink(product.product_link) ? (
-                        <Badge variant="outline" className="flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border-amber-200">
+                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
                           Amazon
                           <ExternalLink className="h-3 w-3" />
                         </Badge>
                       ) : (
-                        <ExternalLink className="h-4 w-4" />
+                        <Link2 className="h-4 w-4" />
                       )}
                     </a>
                   )}
                 </div>
                 
                 {product.product_description && (
-                  <p className="text-sm text-slate-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {product.product_description}
                   </p>
                 )}
@@ -118,7 +96,7 @@ export const RecommendedProducts = ({
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                      className="w-full text-xs"
                       asChild
                     >
                       <a 
