@@ -230,7 +230,7 @@ const SkinAnalyzer = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <Logo size={32} />
+            <Logo size="sm" />
             <h1 className="text-2xl font-bold">Skin Analyzer</h1>
           </div>
           <Button
