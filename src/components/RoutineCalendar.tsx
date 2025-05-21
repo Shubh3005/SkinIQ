@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from "@/components/ui/calendar";
@@ -42,6 +41,10 @@ const RoutineCalendar = () => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Get today's date with time set to beginning of day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   useEffect(() => {
     if (!user) return;
@@ -297,6 +300,13 @@ const RoutineCalendar = () => {
             mode="single" 
             selected={selectedDate} 
             onSelect={setSelectedDate}
+            disabled={(date) => {
+              const dateWithoutTime = new Date(date);
+              dateWithoutTime.setHours(0, 0, 0, 0);
+              const todayWithoutTime = new Date(today);
+              todayWithoutTime.setHours(0, 0, 0, 0);
+              return dateWithoutTime.getTime() !== todayWithoutTime.getTime();
+            }}
             modifiers={{
               morning: (date) => getDateStatus(date) === 'morning',
               evening: (date) => getDateStatus(date) === 'evening',

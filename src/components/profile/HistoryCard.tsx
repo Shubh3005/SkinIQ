@@ -16,6 +16,10 @@ interface HistoryCardProps {
 
 export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: HistoryCardProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const today = new Date();
+  
+  // Set time to beginning of day for comparison
+  today.setHours(0, 0, 0, 0);
 
   const hasEventsForDate = (date: Date) => {
     if (!scanHistory) return false;
@@ -71,6 +75,13 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto"
+            disabled={(date) => {
+              const dateWithoutTime = new Date(date);
+              dateWithoutTime.setHours(0, 0, 0, 0);
+              const todayWithoutTime = new Date(today);
+              todayWithoutTime.setHours(0, 0, 0, 0);
+              return dateWithoutTime.getTime() !== todayWithoutTime.getTime();
+            }}
             modifiers={{
               hasEvent: (date) => hasEventsForDate(date)
             }}
