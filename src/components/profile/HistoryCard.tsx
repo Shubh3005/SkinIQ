@@ -70,7 +70,7 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
             mode="single"
             selected={selectedDate}
             onSelect={setSelectedDate}
-            className="rounded-md border"
+            className="rounded-md border pointer-events-auto"
             classNames={{
               day: cn(
                 "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
@@ -98,7 +98,6 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
                       <h4 className="font-medium">Scan #{index + 1}</h4>
                       <p className="text-sm text-muted-foreground">Skin Type: {scan.skin_type}</p>
                       <p className="text-sm text-muted-foreground">Skin Issues: {scan.skin_issues}</p>
-                      <p className="text-sm text-muted-foreground">Sun Damage: {scan.sun_damage}</p>
                       <p className="text-sm text-muted-foreground">Unique Feature: {scan.unique_feature}</p>
                       <p className="text-sm text-muted-foreground">Skin Tone: {scan.skin_tone}</p>
                     </div>
