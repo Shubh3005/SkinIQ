@@ -63,6 +63,19 @@ export const SkinProfileTab = () => {
           // Safely access properties with optional chaining
           form.setValue('skin_type', data.skin_type || '');
           form.setValue('skin_tone', data.skin_tone || '');
+        } else {
+          // If no profile exists, create one
+          console.log("No profile found, creating one");
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id }]);
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Failed to create profile');
+          } else {
+            console.log("Profile created successfully");
+          }
         }
       } catch (error) {
         console.error('Error:', error);
@@ -120,7 +133,7 @@ export const SkinProfileTab = () => {
                   <Select
                     disabled={isLoading}
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -150,7 +163,7 @@ export const SkinProfileTab = () => {
                   <Select
                     disabled={isLoading}
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>

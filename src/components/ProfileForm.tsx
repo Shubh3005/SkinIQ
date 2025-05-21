@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from './ui/button';
@@ -39,6 +40,7 @@ const ProfileForm = () => {
           setValue('skin_type', data.skin_type || '');
         } else {
           // If no profile was found, we'll create one
+          console.log("No profile found, creating one");
           const { error: createError } = await supabase
             .from('profiles')
             .insert([{ id: user.id }]);
@@ -47,7 +49,7 @@ const ProfileForm = () => {
             console.error('Error creating profile:', createError);
             toast.error('Failed to create profile');
           } else {
-            toast.success('Profile created');
+            console.log("Profile created successfully");
           }
         }
       } catch (error) {

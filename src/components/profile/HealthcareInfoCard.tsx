@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -38,7 +39,7 @@ export const HealthcareInfoCard = () => {
           .from('profiles')
           .select('physician_name, physician_phone, morning_reminder, evening_reminder')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Error fetching healthcare info:', error);
@@ -48,6 +49,19 @@ export const HealthcareInfoCard = () => {
           setValue('physician_phone', data.physician_phone || '');
           setValue('morning_reminder', data.morning_reminder || '08:00');
           setValue('evening_reminder', data.evening_reminder || '20:00');
+        } else {
+          // If no profile exists, create one
+          console.log("No profile found, creating one");
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id }]);
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Failed to create profile');
+          } else {
+            console.log("Profile created successfully");
+          }
         }
       } catch (error) {
         console.error('Error:', error);
