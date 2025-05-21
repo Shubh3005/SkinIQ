@@ -312,7 +312,7 @@ const RoutineCalendar = () => {
               day_selected: "bg-primary text-primary-foreground rounded-full",
               day_today: "bg-muted text-accent-foreground rounded-full border border-border"
             }}
-            className="rounded-md border pointer-events-auto bg-card px-[160px]"
+            className="rounded-md border pointer-events-auto"
           />
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
