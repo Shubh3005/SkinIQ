@@ -23,7 +23,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  
+              
   useEffect(() => {
     // Redirect to home if already authenticated
     if (session) {

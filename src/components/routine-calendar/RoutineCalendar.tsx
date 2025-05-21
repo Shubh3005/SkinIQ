@@ -4,8 +4,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AchievementDialog } from './AchievementDialog';
-import { AchievementSection } from './AchievementSection';
 import { DailyRoutines } from './DailyRoutines';
 import { RoutineCalendarLegend } from './RoutineCalendarLegend';
 import { useRoutineCalendar } from './useRoutineCalendar';
@@ -93,15 +91,10 @@ const RoutineCalendar = () => {
             isUserLoggedIn={!!user}
           />
 
-          <AchievementSection achievements={achievements} />
         </div>
       </div>
 
-      <AchievementDialog 
-        showDialog={showAchievementDialog} 
-        setShowDialog={setShowAchievementDialog}
-        achievement={newAchievement}
-      />
+  
     </div>
   );
 };
