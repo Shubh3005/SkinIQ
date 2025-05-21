@@ -71,11 +71,14 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto"
+            modifiers={{
+              hasEvent: (date) => hasEventsForDate(date)
+            }}
+            modifiersClassNames={{
+              hasEvent: "bg-primary/20 text-primary-foreground font-bold"
+            }}
             classNames={{
-              day: (date) => cn(
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-                hasEventsForDate(date) ? "bg-primary/20 text-primary-foreground font-bold" : ""
-              )
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
             }}
           />
         </div>
