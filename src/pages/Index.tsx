@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import RoutineCalendar from '@/components/RoutineCalendar';
+import RoutineCalendar from '@/components/routine-calendar/RoutineCalendar';
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
