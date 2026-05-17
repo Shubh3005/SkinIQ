@@ -221,7 +221,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
-        const response = await fetch('http://127.0.0.1:8000/predict', {
+        const response = await fetch(`${import.meta.env.VITE_AI_ENDPOINT}/predict`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

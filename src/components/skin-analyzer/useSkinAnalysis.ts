@@ -43,15 +43,11 @@ export const useSkinAnalysis = (user: any) => {
     let usedFallback = false;
     
     try {
-      console.log('Sending request to FastAPI prediction service...');
-      console.log('Image base64 length:', imageBase64.length);
-      
       // Extract only the base64 data part without the prefix
-      const base64Data = imageBase64.split(',')[1];
-      console.log('Base64 data length (without prefix):', base64Data.length);
+      const base64Data = imageBase64.split(',')[1]; // eslint-disable-line @typescript-eslint/no-unused-vars
 
       // Call the FastAPI endpoint with robust error handling
-      const response = await fetch('http://127.0.0.1:8000/predict', {
+      const response = await fetch(`${import.meta.env.VITE_AI_ENDPOINT}/predict`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +59,6 @@ export const useSkinAnalysis = (user: any) => {
         signal: AbortSignal.timeout(15000) // 15 second timeout
       });
 
-      console.log('API response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);

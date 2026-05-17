@@ -35,7 +35,7 @@ const SkinAnalyzer = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
-        const response = await fetch('http://127.0.0.1:8000/', {
+        const response = await fetch(`${import.meta.env.VITE_AI_ENDPOINT}/health`, {
           method: 'GET',
           signal: controller.signal
         }).catch(() => null);
