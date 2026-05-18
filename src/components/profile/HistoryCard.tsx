@@ -75,13 +75,7 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
             selected={selectedDate}
             onSelect={setSelectedDate}
             className="rounded-md border pointer-events-auto"
-            disabled={(date) => {
-              const dateWithoutTime = new Date(date);
-              dateWithoutTime.setHours(0, 0, 0, 0);
-              const todayWithoutTime = new Date(today);
-              todayWithoutTime.setHours(0, 0, 0, 0);
-              return dateWithoutTime.getTime() !== todayWithoutTime.getTime();
-            }}
+            disabled={(date) => date > today}
             modifiers={{
               hasEvent: (date) => hasEventsForDate(date)
             }}
@@ -109,9 +103,10 @@ export const HistoryCard = ({ scanHistory, chatHistory, loadingHistory }: Histor
                     <div key={scan.id} className="bg-muted/70 backdrop-blur-sm p-4 rounded-lg border border-primary/10 shadow-md">
                       <h4 className="font-medium">Scan #{index + 1}</h4>
                       <p className="text-sm text-muted-foreground">Skin Type: {scan.skin_type}</p>
-                      <p className="text-sm text-muted-foreground">Skin Issues: {scan.skin_issues}</p>
-                      <p className="text-sm text-muted-foreground">Unique Feature: {scan.unique_feature}</p>
                       <p className="text-sm text-muted-foreground">Skin Tone: {scan.skin_tone}</p>
+                      <p className="text-sm text-muted-foreground">Skin Issues: {Array.isArray(scan.skin_issues) ? scan.skin_issues.join(', ') : scan.skin_issues}</p>
+                      <p className="text-sm text-muted-foreground">Disease: {scan.disease || 'None detected'}</p>
+                      <p className="text-sm text-muted-foreground">Clinical Urgency: {scan.acneSeverity || '—'}</p>
                     </div>
                   ))}
                 </div>
