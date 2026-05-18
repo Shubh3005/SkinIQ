@@ -1,12 +1,17 @@
 import base64
 import io
+import sys
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as T
+from huggingface_hub import hf_hub_download
 from PIL import Image
+
+HF_REPO_ID = "sgupta7049/skiniq-efficientnet-b3"
+HF_FILENAME = "skiniq_best.pth"
 
 # Alphabetical ordering matches torchvision.datasets.ImageFolder default on HAM10000.
 # Verify this matches your training dataset's class_to_idx before deploying.
@@ -59,10 +64,21 @@ PREPROCESS = T.Compose([
 ])
 
 
-def load_model(model_path: str) -> nn.Module:
+def download_model() -> nn.Module:
+    print(f'Downloading {HF_FILENAME} from {HF_REPO_ID}...', flush=True)
+    try:
+        model_path = hf_hub_download(
+            repo_id=HF_REPO_ID,
+            filename=HF_FILENAME,
+        )
+    except Exception as exc:
+        print(f'ERROR: Failed to download model from HuggingFace: {exc}', file=sys.stderr)
+        raise RuntimeError(f'Model download failed: {exc}')
+
+    print(f'Model cached at {model_path}', flush=True)
     model = models.efficientnet_b3(weights=None)
     model.classifier[1] = nn.Linear(model.classifier[1].in_features, len(CLASS_NAMES))
-    state_dict = torch.load(model_path, map_location='cpu')
+    state_dict = torch.load(model_path, map_location='cpu', weights_only=True)
     model.load_state_dict(state_dict)
     model.eval()
     return model

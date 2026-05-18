@@ -1,4 +1,3 @@
-import os
 import sys
 from contextlib import asynccontextmanager
 
@@ -6,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from model import load_model, predict
+from model import download_model, predict
 
 
 class PredictRequest(BaseModel):
@@ -24,16 +23,11 @@ class PredictResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    model_path = os.environ.get('MODEL_PATH')
-    if not model_path:
-        print('ERROR: MODEL_PATH environment variable is not set.', file=sys.stderr)
-        raise RuntimeError('MODEL_PATH is required')
-    if not os.path.isfile(model_path):
-        print(f'ERROR: Model file not found at {model_path}', file=sys.stderr)
-        raise RuntimeError(f'Model file not found: {model_path}')
-
-    app.state.model = load_model(model_path)
-    print(f'Model loaded from {model_path}', flush=True)
+    try:
+        app.state.model = download_model()
+    except RuntimeError as exc:
+        print(f'ERROR: {exc}', file=sys.stderr)
+        raise
     yield
 
 
