@@ -14,6 +14,7 @@ export const useRoutineCalendar = (userId?: string) => {
   const [isEveningCompleted, setIsEveningCompleted] = useState(false);
   const [showAchievementDialog, setShowAchievementDialog] = useState(false);
   const [newAchievement, setNewAchievement] = useState<AchievementType | null>(null);
+  const [skinType, setSkinType] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Get today's date with time set to beginning of day
@@ -24,7 +25,8 @@ export const useRoutineCalendar = (userId?: string) => {
     if (!userId) return;
     fetchRoutineLogs();
     fetchAchievements();
-  }, [userId, selectedDate]);
+    fetchSkinType();
+  }, [userId]);
 
   useEffect(() => {
     if (routineLogs.length > 0) {
@@ -59,6 +61,20 @@ export const useRoutineCalendar = (userId?: string) => {
         description: "Failed to load routine data",
         variant: "destructive"
       });
+    }
+  };
+
+  const fetchSkinType = async () => {
+    if (!userId) return;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('skin_type')
+        .eq('id', userId)
+        .single();
+      setSkinType(data?.skin_type || null);
+    } catch {
+      // non-fatal — skinType stays null, DailyRoutines shows the prompt
     }
   };
 
@@ -243,5 +259,6 @@ export const useRoutineCalendar = (userId?: string) => {
     today,
     markRoutine,
     getDateStatus,
+    skinType,
   };
 };

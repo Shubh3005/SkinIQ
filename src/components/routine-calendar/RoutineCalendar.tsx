@@ -22,7 +22,8 @@ const RoutineCalendar = () => {
     newAchievement,
     today,
     markRoutine,
-    getDateStatus
+    getDateStatus,
+    skinType,
   } = useRoutineCalendar(user?.id);
 
   return (
@@ -55,13 +56,7 @@ const RoutineCalendar = () => {
             mode="single" 
             selected={selectedDate} 
             onSelect={setSelectedDate}
-            disabled={(date) => {
-              const dateWithoutTime = new Date(date);
-              dateWithoutTime.setHours(0, 0, 0, 0);
-              const todayWithoutTime = new Date(today);
-              todayWithoutTime.setHours(0, 0, 0, 0);
-              return dateWithoutTime.getTime() !== todayWithoutTime.getTime();
-            }}
+            disabled={(date) => date > today}
             modifiers={{
               morning: (date) => getDateStatus(date) === 'morning',
               evening: (date) => getDateStatus(date) === 'evening',
@@ -71,6 +66,11 @@ const RoutineCalendar = () => {
               morning: "bg-amber-200 text-amber-800 font-medium hover:bg-amber-300",
               evening: "bg-blue-200 text-blue-800 font-medium hover:bg-blue-300",
               both: "bg-green-200 text-green-800 font-medium hover:bg-green-300"
+            }}
+            modifiersStyles={{
+              morning: { borderBottom: '3px solid #d97706' },
+              evening: { borderBottom: '3px dashed #2563eb' },
+              both: { borderBottom: '3px double #16a34a' },
             }}
             classNames={{
               day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 relative",
@@ -83,12 +83,13 @@ const RoutineCalendar = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <DailyRoutines 
+          <DailyRoutines
             selectedDate={selectedDate}
             isMorningCompleted={isMorningCompleted}
             isEveningCompleted={isEveningCompleted}
             markRoutine={markRoutine}
             isUserLoggedIn={!!user}
+            skinType={skinType}
           />
 
         </div>
