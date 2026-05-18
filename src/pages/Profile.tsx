@@ -9,6 +9,7 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { UserProfileCard } from '@/components/profile/UserProfileCard';
 import { HistoryCard } from '@/components/profile/HistoryCard';
 import { HealthcareInfoCard } from '@/components/profile/HealthcareInfoCard';
+import { ProgressVisualization } from '@/components/profile/ProgressVisualization';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -104,6 +105,15 @@ const Profile = () => {
             />
           </div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="max-w-6xl mx-auto w-full mt-8"
+        >
+          <ProgressVisualization scanHistory={scanHistory} />
+        </motion.div>
 
         <div className="mt-8 text-center text-sm text-muted-foreground flex items-center justify-center gap-8">
           <div>
