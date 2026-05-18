@@ -10,7 +10,7 @@ type AnalysisResults = {
   skinTone?: string;
   skinIssues?: string;
   disease?: string;
-  acneSeverity?: string;
+  clinicalUrgency?: string;
 };
 
 interface ScanResultsProps {
@@ -54,10 +54,10 @@ export const ScanResults = ({ analysisResults }: ScanResultsProps) => {
                 title="Possible Disease"
                 value={analysisResults.disease || "No disease detected"}
               />
-              <ResultCard 
+              <ResultCard
                 icon={<BarChart className="h-5 w-5 text-purple-400" />}
-                title="Acne Severity"
-                value={analysisResults.acneSeverity || "None"}
+                title="Clinical Urgency"
+                value={analysisResults.clinicalUrgency || "None"}
               />
             </>
           ) : (
@@ -77,7 +77,7 @@ export const ScanResults = ({ analysisResults }: ScanResultsProps) => {
                   "Skin Tone",
                   "Skin Issues",
                   "Possible Disease",
-                  "Acne Severity"
+                  "Clinical Urgency"
                 ][index]}
               />
             ))

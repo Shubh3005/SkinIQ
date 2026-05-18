@@ -83,7 +83,7 @@ export const useSkinAnalysis = (user: any) => {
             skin_tone: data.skinTone,
             scan_image: imageBase64,
             disease: data.disease || "No disease detected",
-            acneSeverity: data.acneSeverity || "None"
+            acneSeverity: data.clinicalUrgency || "None"
           });
           
           if (saveError) {

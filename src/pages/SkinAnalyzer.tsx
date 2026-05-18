@@ -122,6 +122,12 @@ const SkinAnalyzer = () => {
           {/* Results section */}
           <ScanResults analysisResults={analysisResults} />
 
+          {/* Disclaimer */}
+          <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
+            For best results, upload a close-up photo of a specific skin concern in good lighting.
+            This is not a medical diagnosis — consult a dermatologist for any concerning skin conditions.
+          </p>
+
           {/* Image uploader */}
           <ImageUploader onImageSelected={handleImageSelected} />
         </div>

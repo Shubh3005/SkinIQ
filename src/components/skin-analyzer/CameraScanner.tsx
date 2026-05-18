@@ -258,7 +258,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
               skin_tone: data.skinTone,
               scan_image: imageBase64,
               disease: data.disease || "No disease detected",
-              acneSeverity: data.acneSeverity || "None"
+              acneSeverity: data.clinicalUrgency || "None"
             });
             
             if (saveError) {
@@ -304,7 +304,7 @@ export const CameraScanner = ({ onAnalysisComplete, onScanImageCaptured, user }:
                 skin_tone: mockData.skinTone,
                 scan_image: imageBase64,
                 disease: mockData.disease || "No disease detected",
-                acneSeverity: mockData.acneSeverity || "None" 
+                acneSeverity: mockData.clinicalUrgency || "None"
               });
               
               if (saveError) {
