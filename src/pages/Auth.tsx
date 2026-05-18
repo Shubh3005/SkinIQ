@@ -23,6 +23,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [registerPasswordError, setRegisterPasswordError] = useState('');
               
   useEffect(() => {
     // Redirect to home if already authenticated
@@ -51,15 +52,20 @@ const Auth = () => {
   
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterPasswordError('');
     if (!email || !password || !name) {
       toast.error('Please fill all required fields');
       return;
     }
-    
+    if (password.length < 6) {
+      setRegisterPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
     try {
       setIsLoading(true);
       await signUp(email, password, name);
-      // Not navigating here since user needs to verify email
+      // Navigation handled by useEffect([session]) when email confirmation is disabled
     } catch (error) {
       console.error('Registration error:', error);
     } finally {
@@ -233,17 +239,23 @@ const Auth = () => {
                     <Label htmlFor="register-password">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="register-password" 
-                        type="password" 
+                      <Input
+                        id="register-password"
+                        type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10" 
-                        placeholder="Create a password (6+ characters)" 
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (registerPasswordError) setRegisterPasswordError('');
+                        }}
+                        className="pl-10"
+                        placeholder="Create a password (6+ characters)"
                         disabled={isLoading}
                         required
                       />
                     </div>
+                    {registerPasswordError && (
+                      <p className="text-sm text-destructive">{registerPasswordError}</p>
+                    )}
                   </div>
                   
                   <Button 

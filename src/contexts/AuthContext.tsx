@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -54,7 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) throw error;
-      toast.success('Verification email sent! Please check your inbox.');
+
+      if (data.session) {
+        toast.success('Account created! Welcome to SkinIQ.');
+      } else {
+        toast.success('Verification email sent! Please check your inbox.');
+      }
     } catch (error) {
       toast.error(error.message);
       throw error;

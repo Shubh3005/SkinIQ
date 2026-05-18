@@ -17,7 +17,7 @@ interface ProfileFormData {
 const ProfileForm = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ProfileFormData>();
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfileFormData>();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -109,6 +109,7 @@ const ProfileForm = () => {
       <div className="space-y-2">
         <Label htmlFor="skin_type">Skin Type</Label>
         <Select
+          value={watch('skin_type') || ''}
           onValueChange={(value) => setValue('skin_type', value)}
           disabled={isLoading}
         >
